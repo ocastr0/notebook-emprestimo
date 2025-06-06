@@ -1,38 +1,14 @@
 {
+  "version": 2,
   "functions": {
-    "api/notebooks.js": {
-      "runtime": "nodejs18.x"
-    },
-    "api/emprestimos.js": {
-      "runtime": "nodejs18.x"
-    },
-    "api/setores.js": {
-      "runtime": "nodejs18.x"
-    },
-    "api/stats.js": {
-      "runtime": "nodejs18.x"
-    },
-    "api/realtime.js": {
+    "api/**/*.js": {
       "runtime": "nodejs18.x"
     }
   },
-  "headers": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        }
-      ]
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     }
   ]
 }

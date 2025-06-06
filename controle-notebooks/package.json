@@ -1,12 +1,12 @@
 {
-  "name": "controle-notebooks",
+  "name": "notebook-emprestimo",
   "version": "1.0.0",
   "type": "module",
-  "description": "Sistema de controle de notebooks",
+  "main": "index.html",
   "dependencies": {
     "firebase": "^10.7.1"
   },
   "engines": {
-    "node": "18.x"
+    "node": "18"
   }
 }

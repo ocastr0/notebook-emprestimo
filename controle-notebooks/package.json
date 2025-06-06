@@ -2,12 +2,11 @@
   "name": "controle-notebooks",
   "version": "1.0.0",
   "type": "module",
-  "description": "Sistema de empréstimos de notebooks",
+  "description": "Sistema de controle de notebooks",
   "dependencies": {
     "firebase": "^10.7.1"
   },
-  "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'Build complete'"
+  "engines": {
+    "node": "18.x"
   }
 }

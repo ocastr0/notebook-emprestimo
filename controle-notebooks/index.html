@@ -1,30 +1,36 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Notebooks</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Sistema de Empréstimos - Notebooks</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <style>
-        :root {
-            --primary-orange: #FF6B35;
-            --dark-orange: #E55A2B;
-            --light-orange: #FF8C69;
-            --black: #0D1117;
-            --dark-gray: #161B22;
-            --medium-gray: #21262D;
-            --light-gray: #30363D;
-            --white: #F0F6FC;
-            --green: #238636;
-            --red: #DA3633;
-            --blue: #1F6FEB;
-        }
-
+        /* Reset e Base */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+
+        :root {
+            --primary-orange: #FF6B35;
+            --dark-orange: #E55100;
+            --light-orange: #FFB74D;
+            --black: #1a1a1a;
+            --dark-gray: #2c2c2c;
+            --medium-gray: #404040;
+            --light-gray: #f5f5f5;
+            --white: #ffffff;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+            --info: #2196F3;
+            --shadow: 0 4px 20px rgba(0,0,0,0.1);
+            --shadow-hover: 0 8px 30px rgba(0,0,0,0.15);
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
@@ -32,85 +38,39 @@
             background: linear-gradient(135deg, var(--black) 0%, var(--dark-gray) 100%);
             color: var(--white);
             min-height: 100vh;
-            opacity: 0;
-            transition: opacity 0.5s ease;
+            line-height: 1.6;
         }
 
-        body.loaded {
-            opacity: 1;
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, var(--black) 0%, var(--dark-gray) 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            transition: opacity 0.5s ease;
-        }
-
-        .loading-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .spinner {
-            border: 4px solid var(--medium-gray);
-            border-top: 4px solid var(--primary-orange);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* ESTRUTURA PRINCIPAL */
-        .main-container {
-            width: 100%;
-            min-height: 100vh;
-        }
-
-        /* HEADER */
-        .main-header {
+        /* Header */
+        .header {
             background: linear-gradient(135deg, var(--primary-orange) 0%, var(--dark-orange) 100%);
-            padding: 20px 30px;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
-        .header-title {
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--white);
             display: flex;
             align-items: center;
             gap: 15px;
-        }
-
-        .header-title h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--white);
-        }
-
-        .header-title i {
-            font-size: 2.5rem;
-            color: var(--white);
         }
 
         .header-stats {
@@ -119,195 +79,466 @@
         }
 
         .stat-card {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 15px 25px;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: var(--border-radius);
             text-align: center;
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            min-width: 120px;
         }
 
         .stat-number {
-            font-size: 2rem;
+            display: block;
+            font-size: 2.5rem;
             font-weight: 700;
             color: var(--white);
         }
 
         .stat-label {
             font-size: 0.9rem;
-            color: var(--white);
             opacity: 0.9;
         }
 
-        /* NAVEGAÇÃO */
-        .nav-container {
-            background: var(--dark-gray);
-            border-bottom: 1px solid var(--medium-gray);
-        }
-
+        /* Navigation */
         .nav-tabs {
             display: flex;
-            justify-content: center;
-            padding: 0;
-            margin: 0;
+            background: var(--dark-gray);
+            border-radius: var(--border-radius);
+            padding: 10px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            gap: 5px;
         }
 
-        .nav-tab {
-            background: none;
+        .tab-btn {
+            flex: 1;
+            padding: 15px 20px;
+            background: transparent;
             border: none;
             color: var(--white);
-            padding: 20px 30px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            border-radius: calc(var(--border-radius) - 5px);
             font-size: 1rem;
             font-weight: 600;
-            border-bottom: 3px solid transparent;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
-        .nav-tab:hover {
-            background: var(--medium-gray);
+        .tab-btn:hover {
+            background: rgba(255,107,53,0.1);
             color: var(--primary-orange);
         }
 
-        .nav-tab.active {
-            background: var(--medium-gray);
-            color: var(--primary-orange);
-            border-bottom-color: var(--primary-orange);
+        .tab-btn.active {
+            background: var(--primary-orange);
+            color: var(--white);
         }
 
-        /* CONTEÚDO */
-        .content-container {
-            padding: 30px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
+        /* Tab Content */
         .tab-content {
             display: none;
+            animation: fadeIn 0.3s ease-in-out;
         }
 
         .tab-content.active {
             display: block;
         }
 
-        /* NOTEBOOKS GRID */
-        .notebooks-grid {
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dashboard */
+        .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .notebooks-grid h2,
+        .emprestimos-ativos h2 {
+            color: var(--primary-orange);
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .notebooks-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
         }
 
         .notebook-card {
             background: var(--dark-gray);
-            border-radius: 12px;
-            padding: 20px;
-            border: 2px solid var(--medium-gray);
-            transition: all 0.3s ease;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            text-align: center;
+            transition: var(--transition);
+            border: 2px solid transparent;
+            position: relative;
             cursor: pointer;
         }
 
-        .notebook-card:hover {
-            border-color: var(--primary-orange);
-            transform: translateY(-5px);
+        .notebook-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-orange);
         }
 
         .notebook-card.disponivel {
-            border-left: 4px solid var(--green);
+            border-color: var(--success);
+        }
+
+        .notebook-card.disponivel::before {
+            background: var(--success);
         }
 
         .notebook-card.emprestado {
-            border-left: 4px solid var(--red);
+            border-color: var(--danger);
+        }
+
+        .notebook-card.emprestado::before {
+            background: var(--danger);
+        }
+
+        .notebook-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
         }
 
         .notebook-icon {
-            text-align: center;
+            font-size: 3.5rem;
             margin-bottom: 15px;
-        }
-
-        .notebook-icon i {
-            font-size: 3rem;
             color: var(--primary-orange);
         }
 
         .notebook-number {
-            text-align: center;
             font-size: 1.3rem;
             font-weight: 700;
-            color: var(--white);
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .notebook-status {
-            text-align: center;
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 0.9rem;
             font-weight: 600;
             margin-bottom: 15px;
+            display: inline-block;
         }
 
         .status-disponivel {
-            background: var(--green);
+            background: var(--success);
             color: var(--white);
         }
 
         .status-emprestado {
-            background: var(--red);
+            background: var(--danger);
             color: var(--white);
         }
 
         .notebook-info {
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--light-orange);
-            margin-bottom: 15px;
-            min-height: 60px;
+            font-size: 0.95rem;
+            opacity: 0.85;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .notebook-info strong {
+            color: var(--primary-orange);
         }
 
         .notebook-actions {
-            text-align: center;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
         }
 
-        /* BOTÕES */
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-orange) 0%, var(--dark-orange) 100%);
+        /* Empréstimos Ativos */
+        .emprestimos-list {
+            background: var(--dark-gray);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            max-height: 650px;
+            overflow-y: auto;
+        }
+
+        .emprestimo-item {
+            background: rgba(255,107,53,0.1);
+            border: 1px solid var(--primary-orange);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .emprestimo-item:hover {
+            background: rgba(255,107,53,0.2);
+            transform: translateX(5px);
+        }
+
+        .emprestimo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .emprestimo-notebook {
+            font-weight: 700;
+            color: var(--primary-orange);
+            font-size: 1.1rem;
+        }
+
+        .emprestimo-status {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-ativo {
+            background: var(--warning);
+            color: var(--black);
+        }
+
+        .status-atrasado {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        .emprestimo-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 0.9rem;
+        }
+
+        .emprestimo-info > div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .emprestimo-info strong {
+            color: var(--light-orange);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        /* Formulário */
+        .form-container {
+            background: var(--dark-gray);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            max-width: 700px;
+            margin: 0 auto;
+            box-shadow: var(--shadow);
+        }
+
+        .form-container h2 {
+            color: var(--primary-orange);
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-orange);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--medium-gray);
+            border-radius: var(--border-radius);
+            background: var(--black);
+            color: var(--white);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-orange);
+            box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+        }
+
+        .form-group small {
+            color: var(--light-orange);
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        /* Gestão de Setores */
+        .setores-management {
+            background: var(--dark-gray);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .setores-management h3 {
+            color: var(--primary-orange);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .setores-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: end;
+        }
+
+        .setores-form input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--medium-gray);
+            border-radius: var(--border-radius);
+            background: var(--black);
+            color: var(--white);
+        }
+
+        .setores-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .setor-item {
+            background: rgba(255,107,53,0.1);
+            border: 1px solid var(--primary-orange);
+            border-radius: 20px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .setor-remove {
+            background: var(--danger);
             color: var(--white);
             border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
             cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        /* Botões */
+        .btn-primary,
+        .btn-secondary,
+        .btn-success,
+        .btn-danger,
+        .btn-info,
+        .btn-warning {
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
             font-weight: 600;
-            transition: all 0.3s ease;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-orange);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--dark-orange);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--black);
+            color: var(--white);
+            border: 2px solid var(--primary-orange);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-orange);
         }
 
         .btn-danger {
-            background: var(--red);
+            background: var(--danger);
             color: var(--white);
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: var(--white);
+        }
+
+        .btn-info {
+            background: var(--info);
+            color: var(--white);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: var(--black);
         }
 
         .btn-small {
-            font-size: 0.85rem;
-            padding: 6px 12px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
         }
 
-        /* MODAIS */
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
-            z-index: 1000;
-            left: 0;
             top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
         }
 
         .modal.active {
@@ -317,571 +548,374 @@
         }
 
         .modal-content {
-            background: var(--black);
-            border-radius: 12px;
-            border: 2px solid var(--primary-orange);
+            background: var(--dark-gray);
+            border-radius: var(--border-radius);
             max-width: 600px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
+            animation: modalSlideIn 0.3s ease-out;
         }
 
-        /* RESPONSIVO */
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--medium-gray);
+            background: var(--primary-orange);
+        }
+
+        .modal-header h3 {
+            color: var(--white);
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid var(--medium-gray);
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+
+        .detalhe-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--medium-gray);
+        }
+
+        .detalhe-item:last-child {
+            border-bottom: none;
+        }
+
+        .detalhe-label {
+            font-weight: 600;
+            color: var(--primary-orange);
+        }
+
+        .detalhe-valor {
+            color: var(--white);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: var(--border-radius);
+            color: var(--white);
+            font-weight: 600;
+            z-index: 1001;
+            animation: toastSlideIn 0.3s ease-out;
+        }
+
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        .toast.warning { background: var(--warning); color: var(--black); }
+
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Responsividade */
         @media (max-width: 768px) {
-            .main-header {
-                flex-direction: column;
-                gap: 20px;
-                text-align: center;
-            }
-
-            .nav-tabs {
-                flex-wrap: wrap;
-            }
-
-            .notebooks-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .content-container {
-                padding: 20px;
-            }
+            .container { padding: 15px; }
+            .header { padding: 20px; }
+            .header-content { flex-direction: column; text-align: center; }
+            .header h1 { font-size: 2rem; }
+            .nav-tabs { flex-direction: column; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .notebooks-container { grid-template-columns: 1fr; }
+            .emprestimo-info { grid-template-columns: 1fr; }
+            .setores-form { flex-direction: column; }
         }
     </style>
 </head>
-
 <body>
-    <!-- TELA DE CARREGAMENTO -->
-    <div id="loadingScreen" class="loading-screen">
-        <div class="spinner"></div>
-        <h2 style="color: var(--primary-orange); margin-bottom: 10px;">Sistema de Notebooks</h2>
-        <p id="loadingText">Carregando sistema...</p>
-    </div>
+    <!-- Firebase compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-database-compat.js"></script>
 
-    <!-- VERIFICAÇÃO DE AUTENTICAÇÃO OTIMIZADA -->
     <script>
-        class FastAuthGuard {
-            constructor() {
-                this.loadingText = document.getElementById('loadingText');
-                this.updateLoadingText('Verificando autenticação...');
-                this.checkAuth();
-            }
+        // Configuração do Firebase
+        var firebaseConfig = {
+            apiKey: "AIzaSyA-MT3SU98q0RZhEMh1IEpmgEaGXZPpKAQ",
+            authDomain: "notebook-emprestimo.firebaseapp.com",
+            databaseURL: "https://notebook-emprestimo-default-rtdb.firebaseio.com",
+            projectId: "notebook-emprestimo",
+            storageBucket: "notebook-emprestimo.firebasestorage.app",
+            messagingSenderId: "1007063409338",
+            appId: "1:1007063409338:web:5538614ffa1eaf315e5883",
+            measurementId: "G-56H4W8HG9Z"
+        };
 
-            checkAuth() {
-                // Verificação rápida de cache local
-                const authData = localStorage.getItem('fastAuth');
-                const isLoggedIn = localStorage.getItem('isLoggedIn');
-
-                if (!authData || !isLoggedIn) {
-                    console.log('❌ Não autenticado');
-                    this.redirectToLogin();
-                    return;
-                }
-
-                try {
-                    const data = JSON.parse(authData);
-                    const now = Date.now();
-                    const expiry = data.timestamp + (24 * 60 * 60 * 1000);
-
-                    if (now > expiry) {
-                        console.log('⏰ Sessão expirada');
-                        this.clearAuthAndRedirect();
-                        return;
-                    }
-
-                    console.log('✅ Usuário autenticado:', data.email);
-                    this.updateLoadingText('Usuário autenticado!');
-                    this.loadSystem(data);
-
-                } catch (error) {
-                    console.error('❌ Erro ao verificar autenticação:', error);
-                    this.clearAuthAndRedirect();
-                }
-            }
-
-            async loadSystem(userData) {
-                try {
-                    this.updateLoadingText('Carregando interface...');
-
-                    // Mostrar sistema
-                    await this.showSystem(userData);
-
-                    this.updateLoadingText('Carregando dados...');
-
-                    // Inicializar sistema
-                    await this.initializeSystem();
-
-                    this.updateLoadingText('Pronto!');
-
-                    // Remover tela de loading
-                    setTimeout(() => {
-                        this.hideLoading();
-                    }, 500);
-
-                } catch (error) {
-                    console.error('❌ Erro ao carregar sistema:', error);
-                    this.redirectToLogin();
-                }
-            }
-
-            async showSystem(userData) {
-                // Criar info do usuário
-                this.createUserInfo(userData);
-
-                // Mostrar body
-                document.body.classList.add('loaded');
-            }
-
-            async initializeSystem() {
-                // Carregar Firebase em background
-                await this.loadFirebase();
-
-                // Inicializar sistema principal
-                if (typeof SistemaEmprestimos === 'undefined') {
-                    // Aguardar carregamento do script
-                    await new Promise(resolve => {
-                        const checkSystem = () => {
-                            if (typeof SistemaEmprestimos !== 'undefined') {
-                                resolve();
-                            } else {
-                                setTimeout(checkSystem, 100);
-                            }
-                        };
-                        checkSystem();
-                    });
-                }
-
-                // Inicializar sistema
-                window.sistema = new SistemaEmprestimos();
-            }
-
-            async loadFirebase() {
-                try {
-                    if (typeof firebase === 'undefined') {
-                        await Promise.all([
-                            this.loadScript('https://www.gstatic.com/firebasejs/11.9.0/firebase-app-compat.js'),
-                            this.loadScript('https://www.gstatic.com/firebasejs/11.9.0/firebase-auth-compat.js'),
-                            this.loadScript('https://www.gstatic.com/firebasejs/11.9.0/firebase-database-compat.js')
-                        ]);
-
-                        const firebaseConfig = {
-                            apiKey: "AIzaSyA-MT3SU98q0RZhEMh1IEpmgEaGXZPpKAQ",
-                            authDomain: "notebook-emprestimo.firebaseapp.com",
-                            databaseURL: "https://notebook-emprestimo-default-rtdb.firebaseio.com",
-                            projectId: "notebook-emprestimo",
-                            storageBucket: "notebook-emprestimo.firebasestorage.app",
-                            messagingSenderId: "1007063409338",
-                            appId: "1:1007063409338:web:5538614ffa1eaf315e5883"
-                        };
-
-                        if (!firebase.apps.length) {
-                            firebase.initializeApp(firebaseConfig);
-                        }
-                    }
-                    console.log('✅ Firebase carregado');
-                } catch (error) {
-                    console.log('⚠️ Firebase não disponível, continuando offline');
-                }
-            }
-
-            loadScript(src) {
-                return new Promise((resolve, reject) => {
-                    if (document.querySelector(`script[src="${src}"]`)) {
-                        resolve();
-                        return;
-                    }
-
-                    const script = document.createElement('script');
-                    script.src = src;
-                    script.async = true;
-                    script.onload = resolve;
-                    script.onerror = reject;
-                    document.head.appendChild(script);
-                });
-            }
-
-            createUserInfo(userData) {
-                const userInfo = document.createElement('div');
-                userInfo.id = 'user-info';
-                userInfo.innerHTML = `
-                    <div style="position: fixed; top: 10px; right: 20px; z-index: 1000; background: var(--dark-gray); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--primary-orange); display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-                        <span style="color: var(--white); font-size: 0.9rem;">
-                            <i class="fas fa-user" style="color: var(--primary-orange);"></i> ${userData.email}
-                        </span>
-                        <button onclick="fastAuthGuard.logout()" style="background: var(--red); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
-                            <i class="fas fa-sign-out-alt"></i> Sair
-                        </button>
-                    </div>
-                `;
-                document.body.appendChild(userInfo);
-            }
-
-            hideLoading() {
-                const loadingScreen = document.getElementById('loadingScreen');
-                loadingScreen.classList.add('hidden');
-
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                }, 500);
-            }
-
-            updateLoadingText(text) {
-                if (this.loadingText) {
-                    this.loadingText.textContent = text;
-                }
-                console.log('📝 Loading:', text);
-            }
-
-            logout() {
-                if (confirm('Deseja sair do sistema?')) {
-                    this.clearAuthAndRedirect();
-                }
-            }
-
-            clearAuthAndRedirect() {
-                localStorage.removeItem('fastAuth');
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('userEmail');
-                this.redirectToLogin();
-            }
-
-            redirectToLogin() {
-                const currentHost = window.location.host;
-                const loginUrl = currentHost.includes('vercel.app')
-                    ? `https://${currentHost}/index-login.html`
-                    : './index-login.html';
-
-                window.location.href = loginUrl;
-            }
-        }
-
-        // Inicializar verificação de autenticação imediatamente
-        let fastAuthGuard;
-        fastAuthGuard = new FastAuthGuard();
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
     </script>
 
-    <!-- INTERFACE ESTÁTICA (não criada dinamicamente) -->
-    <div class="main-container">
-        <!-- HEADER -->
-        <header class="main-header">
-            <div class="header-title">
-                <i class="fas fa-laptop"></i>
-                <h1>Sistema de Empréstimos</h1>
-            </div>
-            <div class="header-stats">
-                <div class="stat-card">
-                    <div class="stat-number" id="disponiveisCount">0</div>
-                    <div class="stat-label">Disponíveis</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="emprestadosCount">0</div>
-                    <div class="stat-label">Em Uso</div>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-laptop"></i> Sistema de Empréstimos</h1>
+                <div class="header-stats">
+                    <div class="stat-card">
+                        <span class="stat-number" id="disponiveisCount">15</span>
+                        <span class="stat-label">Disponíveis</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="emprestadosCount">0</span>
+                        <span class="stat-label">Em Uso</span>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <!-- NAVEGAÇÃO -->
-        <nav class="nav-container">
-            <div class="nav-tabs">
-                <button class="nav-tab active" data-tab="dashboard">
-                    <i class="fas fa-home"></i> Dashboard
-                </button>
-                <button class="nav-tab" data-tab="solicitar">
-                    <i class="fas fa-plus"></i> Nova Solicitação
-                </button>
-                <button class="nav-tab" data-tab="calendario">
-                    <i class="fas fa-calendar"></i> Calendário
-                </button>
-                <button class="nav-tab" data-tab="historico">
-                    <i class="fas fa-history"></i> Histórico
-                </button>
-                <button class="nav-tab" data-tab="setores">
-                    <i class="fas fa-building"></i> Setores
-                </button>
-            </div>
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="dashboard">
+                <i class="fas fa-home"></i> Dashboard
+            </button>
+            <button class="tab-btn" data-tab="solicitar">
+                <i class="fas fa-plus"></i> Nova Solicitação
+            </button>
+            <button class="tab-btn" data-tab="calendario">
+                <i class="fas fa-calendar"></i> Calendário
+            </button>
+            <button class="tab-btn" data-tab="historico">
+                <i class="fas fa-history"></i> Histórico
+            </button>
+            <button class="tab-btn" data-tab="setores">
+                <i class="fas fa-building"></i> Setores
+            </button>
         </nav>
 
-        <!-- CONTEÚDO -->
-        <main class="content-container">
-            <!-- ABA DASHBOARD -->
-            <div id="dashboard" class="tab-content active">
-                <div class="dashboard-section">
-                    <h2
-                        style="color: var(--primary-orange); font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-laptop"></i> Status dos Notebooks
-                    </h2>
-                    <div id="notebooksContainer" class="notebooks-grid">
-                        <!-- Notebooks serão renderizados aqui -->
+        <!-- Dashboard Tab -->
+        <div class="tab-content active" id="dashboard">
+            <div class="dashboard-grid">
+                <div class="notebooks-grid">
+                    <h2><i class="fas fa-laptop"></i> Status dos Notebooks</h2>
+                    <div class="notebooks-container" id="notebooksContainer">
+                        <!-- Notebooks serão gerados dinamicamente -->
                     </div>
                 </div>
-
-                <div class="dashboard-section" style="margin-top: 40px;">
-                    <h2
-                        style="color: var(--primary-orange); font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-clipboard-list"></i> Empréstimos Ativos
-                    </h2>
-                    <div id="emprestimosAtivos"
-                        style="background: var(--dark-gray); border-radius: 12px; padding: 25px;">
-                        <!-- Empréstimos ativos serão renderizados aqui -->
+                
+                <div class="emprestimos-ativos">
+                    <h2><i class="fas fa-clipboard-list"></i> Empréstimos Ativos</h2>
+                    <div class="emprestimos-list" id="emprestimosAtivos">
+                        <div style="text-align: center; padding: 40px; opacity: 0.7;">
+                            <i class="fas fa-clipboard-list" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
+                            <p>Nenhum empréstimo ativo</p>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- ABA NOVA SOLICITAÇÃO -->
-            <div id="solicitar" class="tab-content">
-                <h2
-                    style="color: var(--primary-orange); font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-plus"></i> Nova Solicitação de Empréstimo
-                </h2>
-                <form id="formSolicitacao"
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; background: var(--dark-gray); padding: 30px; border-radius: 12px;">
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="color: var(--primary-orange); font-weight: 600;">
-                            <i class="fas fa-user"></i> Nome do Colaborador
-                        </label>
-                        <input type="text" id="nomeColaborador" required
-                            style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white);">
+        <!-- Solicitar Tab -->
+        <div class="tab-content" id="solicitar">
+            <div class="form-container">
+                <h2>Nova Solicitação de Empréstimo</h2>
+                <form id="formSolicitacao">
+                    <div class="form-group">
+                        <label for="nomeColaborador">Nome do Colaborador:</label>
+                        <input type="text" id="nomeColaborador" required>
                     </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="color: var(--primary-orange); font-weight: 600;">
-                            <i class="fas fa-building"></i> Setor
-                        </label>
-                        <select id="setorColaborador" required
-                            style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white);">
+                    
+                    <div class="form-group">
+                        <label for="setorColaborador">Setor:</label>
+                        <select id="setorColaborador" required>
                             <option value="">Selecione o setor</option>
                         </select>
                     </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="color: var(--primary-orange); font-weight: 600;">
-                            <i class="fas fa-laptop"></i> Notebook
-                        </label>
-                        <select id="notebookSelecionado" required
-                            style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white);">
-                            <option value="">Selecione um notebook</option>
+                    
+                    <div class="form-group">
+                        <label for="notebookSelecionado">Notebook Desejado:</label>
+                        <select id="notebookSelecionado" required>
+                            <option value="">Selecione um notebook disponível</option>
                         </select>
+                        <small>
+                            <i class="fas fa-info-circle"></i> Apenas notebooks disponíveis são exibidos
+                        </small>
                     </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="color: var(--primary-orange); font-weight: 600;">
-                            <i class="fas fa-ticket-alt"></i> Número do Chamado
-                        </label>
-                        <input type="text" id="numeroChamado" required
-                            style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white);">
+                    
+                    <div class="form-group">
+                        <label for="numeroChamado">Número do Chamado:</label>
+                        <input type="text" id="numeroChamado" required>
                     </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="color: var(--primary-orange); font-weight: 600;">
-                            <i class="fas fa-calendar"></i> Data de Devolução
-                        </label>
-                        <input type="date" id="dataPrevisaoDevolucao" required
-                            style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white);">
+                    
+                    <div class="form-group">
+                        <label for="motivoEmprestimo">Motivo do Empréstimo:</label>
+                        <textarea id="motivoEmprestimo" rows="3" required placeholder="Descreva o motivo da solicitação..."></textarea>
                     </div>
-
-                    <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px;">
-                        <label style="color: var(--primary-orange); font-weight: 600;">
-                            <i class="fas fa-comment"></i> Motivo do Empréstimo
-                        </label>
-                        <textarea id="motivoEmprestimo" rows="3" required
-                            style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white);"></textarea>
+                    
+                    <div class="form-group">
+                        <label for="dataPrevisaoDevolucao">Previsão de Devolução:</label>
+                        <input type="date" id="dataPrevisaoDevolucao" required>
                     </div>
-
-                    <div style="grid-column: 1 / -1; text-align: center; margin-top: 20px;">
-                        <button type="submit" class="btn-primary" style="padding: 15px 30px; font-size: 1.1rem;">
-                            <i class="fas fa-paper-plane"></i> Solicitar Empréstimo
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-check"></i> Solicitar Empréstimo
+                        </button>
+                        <button type="reset" class="btn-secondary">
+                            <i class="fas fa-times"></i> Limpar
                         </button>
                     </div>
                 </form>
             </div>
+        </div>
 
-            <!-- ABA CALENDÁRIO -->
-            <div id="calendario" class="tab-content">
-                <h2
-                    style="color: var(--primary-orange); font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-calendar"></i> Calendário de Devoluções
-                </h2>
-                <div style="background: var(--dark-gray); border-radius: 12px; padding: 30px;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                        <button id="prevMonth"
-                            style="background: var(--medium-gray); color: var(--white); border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-                            <i class="fas fa-chevron-left"></i> Anterior
-                        </button>
-                        <h2 id="monthYear" style="color: var(--primary-orange); margin: 0;">Carregando...</h2>
-                        <button id="nextMonth"
-                            style="background: var(--medium-gray); color: var(--white); border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-                            Próximo <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                    <div id="calendar"></div>
+        <!-- Calendário Tab -->
+        <div class="tab-content" id="calendario">
+            <div style="background: var(--dark-gray); border-radius: var(--border-radius); padding: 30px;">
+                <h2 style="color: var(--primary-orange); margin-bottom: 30px; text-align: center; font-size: 2rem;">Calendário de Devoluções</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                    <button id="prevMonth" style="background: var(--primary-orange); color: var(--white); border: none; padding: 12px; border-radius: 50%; cursor: pointer; width: 50px; height: 50px;">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h3 id="currentMonth" style="color: var(--primary-orange); font-size: 1.8rem;">Carregando...</h3>
+                    <button id="nextMonth" style="background: var(--primary-orange); color: var(--white); border: none; padding: 12px; border-radius: 50%; cursor: pointer; width: 50px; height: 50px;">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div id="calendarioGrid">
+                    <!-- Calendário será gerado dinamicamente -->
                 </div>
             </div>
+        </div>
 
-            <!-- ABA HISTÓRICO -->
-            <div id="historico" class="tab-content">
-                <h2
-                    style="color: var(--primary-orange); font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-history"></i> Histórico de Empréstimos
-                </h2>
-
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; background: var(--dark-gray); padding: 20px; border-radius: 12px;">
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="color: var(--primary-orange); font-weight: 600;">Filtrar por Nome:</label>
-                        <input type="text" id="filtroNome" placeholder="Digite o nome..."
-                            style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white);">
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="color: var(--primary-orange); font-weight: 600;">Filtrar por Setor:</label>
-                        <select id="filtroSetor"
-                            style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white);">
-                            <option value="">Todos os setores</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="color: var(--primary-orange); font-weight: 600;">Filtrar por Mês:</label>
-                        <input type="month" id="filtroMes"
-                            style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white);">
-                    </div>
+        <!-- Histórico Tab -->
+        <div class="tab-content" id="historico">
+            <div style="background: var(--dark-gray); border-radius: var(--border-radius); padding: 30px;">
+                <h2 style="color: var(--primary-orange); margin-bottom: 30px; text-align: center; font-size: 2rem;">Histórico de Empréstimos</h2>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px; padding: 20px; background: var(--black); border-radius: var(--border-radius);">
+                    <input type="text" id="filtroNome" placeholder="Filtrar por nome..." style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    <select id="filtroSetor" style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        <option value="">Todos os setores</option>
+                    </select>
+                    <input type="month" id="filtroMes" style="padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
                 </div>
-
-                <div style="background: var(--dark-gray); border-radius: 12px; overflow: hidden;">
-                    <table style="width: 100%; border-collapse: collapse;">
+                
+                <div style="overflow-x: auto; border-radius: var(--border-radius);">
+                    <table style="width: 100%; border-collapse: collapse; background: var(--black); border-radius: var(--border-radius); overflow: hidden;">
                         <thead style="background: var(--primary-orange);">
                             <tr>
-                                <th style="padding: 15px; text-align: left; color: var(--white);">Notebook</th>
-                                <th style="padding: 15px; text-align: left; color: var(--white);">Colaborador</th>
-                                <th style="padding: 15px; text-align: left; color: var(--white);">Setor</th>
-                                <th style="padding: 15px; text-align: left; color: var(--white);">Chamado</th>
-                                <th style="padding: 15px; text-align: left; color: var(--white);">Data Entrega</th>
-                                <th style="padding: 15px; text-align: left; color: var(--white);">Data Devolução</th>
-                                <th style="padding: 15px; text-align: left; color: var(--white);">Status</th>
+                                <th style="padding: 15px; text-align: left; color: var(--white); font-weight: 700;">Notebook</th>
+                                <th style="padding: 15px; text-align: left; color: var(--white); font-weight: 700;">Colaborador</th>
+                                <th style="padding: 15px; text-align: left; color: var(--white); font-weight: 700;">Setor</th>
+                                <th style="padding: 15px; text-align: left; color: var(--white); font-weight: 700;">Chamado</th>
+                                <th style="padding: 15px; text-align: left; color: var(--white); font-weight: 700;">Entrega</th>
+                                <th style="padding: 15px; text-align: left; color: var(--white); font-weight: 700;">Devolução</th>
+                                <th style="padding: 15px; text-align: left; color: var(--white); font-weight: 700;">Status</th>
                             </tr>
                         </thead>
-                        <tbody id="historicoTableBody">
-                            <!-- Dados serão inseridos aqui -->
+                        <tbody id="historicoTableBody" style="color: var(--white);">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px; opacity: 0.7;">
+                                    <i class="fas fa-history" style="font-size: 2rem; margin-bottom: 10px; color: var(--primary-orange);"></i><br>
+                                    Nenhum histórico disponível
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+        </div>
 
-            <!-- ABA SETORES -->
-            <div id="setores" class="tab-content">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <!-- GERENCIAR SETORES -->
-                    <div>
-                        <h2
-                            style="color: var(--primary-orange); font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-building"></i> Gerenciar Setores
-                        </h2>
+        <!-- Setores Tab -->
+        <div class="tab-content" id="setores">
+            <div class="setores-management">
+                <h3><i class="fas fa-building"></i> Gerenciar Setores</h3>
+                <div class="setores-form">
+                    <input type="text" id="novoSetor" placeholder="Digite o nome do novo setor...">
+                    <button type="button" class="btn-primary" id="btnAdicionarSetor">
+                        <i class="fas fa-plus"></i> Adicionar
+                    </button>
+                </div>
+                <div class="setores-list" id="setoresList">
+                    <!-- Lista de setores será gerada dinamicamente -->
+                </div>
+            </div>
+        </div>
 
-                        <div style="background: var(--dark-gray); border-radius: 12px; padding: 25px;">
-                            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                                <input type="text" id="novoSetor" placeholder="Nome do novo setor..."
-                                    style="flex: 1; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white);">
-                                <button class="btn-primary">
-                                    <i class="fas fa-plus"></i> Adicionar
-                                </button>
-                            </div>
-
-                            <div id="setoresList">
-                                <!-- Lista de setores será renderizada aqui -->
-                            </div>
-                        </div>
+        <!-- Modal para Devolução CORRIGIDO -->
+        <div class="modal" id="modalDevolucao">
+            <div class="modal-content" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-undo"></i> Confirmar Devolução</h3>
+                    <button class="modal-close" type="button">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="infoDevolucaoNotebook" style="background: var(--black); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--primary-orange);">
+                        <!-- Informações do notebook serão inseridas aqui -->
                     </div>
-
-                    <!-- GESTÃO DE NOTEBOOKS -->
-                    <div>
-                        <h2
-                            style="color: var(--primary-orange); font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-laptop"></i> Gestão de Notebooks
-                        </h2>
-
-                        <div style="background: var(--dark-gray); border-radius: 12px; padding: 25px;">
-                            <div
-                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 20px;">
-                                <div
-                                    style="background: var(--black); padding: 15px; border-radius: 8px; text-align: center;">
-                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-orange);"
-                                        id="totalNotebooks">0</div>
-                                    <div style="font-size: 0.8rem; color: var(--white);">Total</div>
-                                </div>
-                                <div
-                                    style="background: var(--black); padding: 15px; border-radius: 8px; text-align: center;">
-                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--green);"
-                                        id="disponiveis">0</div>
-                                    <div style="font-size: 0.8rem; color: var(--white);">Disponíveis</div>
-                                </div>
-                                <div
-                                    style="background: var(--black); padding: 15px; border-radius: 8px; text-align: center;">
-                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--red);" id="emUso">0
-                                    </div>
-                                    <div style="font-size: 0.8rem; color: var(--white);">Em Uso</div>
-                                </div>
-                            </div>
-
-                            <div
-                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
-                                <button class="btn-primary">Adicionar Notebook</button>
-                                <button
-                                    style="background: var(--medium-gray); color: var(--white); border: none; padding: 12px; border-radius: 8px; cursor: pointer;">Editar
-                                    em Massa</button>
-                                <button
-                                    style="background: var(--medium-gray); color: var(--white); border: none; padding: 12px; border-radius: 8px; cursor: pointer;">Exportar</button>
-                                <button
-                                    style="background: var(--red); color: var(--white); border: none; padding: 12px; border-radius: 8px; cursor: pointer;">Resetar</button>
-                            </div>
-                        </div>
-
-                        <div id="notebooksEdicaoContainer">
-                            <!-- Lista de notebooks para edição será renderizada aqui -->
-                        </div>
+                    
+                    <div class="form-group">
+                        <label for="observacoesDevolucao" style="color: var(--primary-orange); font-weight: 600;">
+                            <i class="fas fa-comment"></i> Observações da Devolução (Opcional):
+                        </label>
+                        <textarea 
+                            id="observacoesDevolucao" 
+                            rows="4" 
+                            placeholder="Digite observações sobre o estado do notebook, problemas encontrados, etc."
+                            style="width: 100%; padding: 15px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white); resize: vertical; font-family: inherit;"
+                        ></textarea>
                     </div>
                 </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- MODAL DE DEVOLUÇÃO -->
-    <div id="modalDevolucao" class="modal">
-        <div class="modal-content">
-            <div
-                style="background: var(--primary-orange); padding: 20px; border-radius: 10px 10px 0 0; position: relative;">
-                <h2 style="margin: 0; color: var(--white); display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-undo"></i> Confirmar Devolução
-                </h2>
-                <button onclick="sistema.fecharModal()"
-                    style="background: none; border: none; color: var(--white); font-size: 24px; cursor: pointer; position: absolute; top: 15px; right: 20px;">&times;</button>
-            </div>
-            <div style="padding: 30px;">
-                <div id="infoDevolucao">
-                    <!-- Informações do empréstimo serão inseridas aqui -->
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <label style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
-                        <i class="fas fa-comment"></i> Observações da Devolução (Opcional):
-                    </label>
-                    <textarea id="observacoesDevolucao" rows="4"
-                        placeholder="Descreva o estado do notebook, problemas encontrados, etc."
-                        style="width: 100%; padding: 15px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white); resize: vertical;"></textarea>
+                <div class="modal-footer">
+                    <button class="btn-secondary modal-close" type="button">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button id="confirmarDevolucaoBtn" class="btn-primary" type="button">
+                        <i class="fas fa-check"></i> Confirmar Devolução
+                    </button>
                 </div>
             </div>
-            <div
-                style="padding: 20px 30px; border-top: 1px solid var(--medium-gray); display: flex; gap: 15px; justify-content: flex-end;">
-                <button onclick="sistema.fecharModal()"
-                    style="background: var(--medium-gray); color: var(--white); border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
-                <button id="confirmarDevolucao" onclick="sistema.confirmarDevolucao()"
-                    style="background: #4CAF50; color: var(--white); border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-                    <i class="fas fa-check"></i> Confirmar Devolução
-                </button>
+        </div>
+
+        <!-- Modal para Detalhes do Empréstimo -->
+        <div class="modal" id="modalDetalhes">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-info-circle"></i> Detalhes do Empréstimo</h3>
+                    <button class="modal-close" type="button">&times;</button>
+                </div>
+                <div class="modal-body" id="detalhesEmprestimoContent">
+                    <!-- Detalhes serão inseridos dinamicamente -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary modal-close" type="button">
+                        <i class="fas fa-times"></i> Fechar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- SISTEMA EMPRÉSTIMOS OTIMIZADO -->
     <script>
         class SistemaEmprestimos {
             constructor() {
@@ -890,161 +924,90 @@
                 this.setores = [];
                 this.currentMonth = new Date();
                 this.isLoading = false;
-
-                console.log('🚀 Inicializando sistema otimizado...');
+                
+                // Referencias Firebase
+                this.dbNotebooks = firebase.database().ref().child('notebooks');
+                this.dbEmprestimos = firebase.database().ref().child('emprestimos');
+                this.dbSetores = firebase.database().ref().child('setores');
+                
+                console.log('🚀 Inicializando sistema...');
+                
+                // IMPORTANTE: Definir como variável global IMEDIATAMENTE
+                window.sistema = this;
+                
                 this.init();
             }
 
             async init() {
                 try {
                     this.isLoading = true;
-
-                    // Atualizar texto de loading
-                    if (window.fastAuthGuard) {
-                        fastAuthGuard.updateLoadingText('Carregando dados do Firebase...');
-                    }
-
-                    // Carregar dados (com cache)
-                    await this.loadDataWithCache();
-
-                    // Configurar eventos
+                    
+                    // Carregar dados do Firebase
+                    await this.loadFromFirebase();
+                    
+                    // Configurar eventos - CRÍTICO: após carregar dados
                     this.setupEventListeners();
-
-                    // Renderizar interface
+                    
+                    // Renderizar tudo
                     this.renderAll();
-
+                    
                     console.log('✅ Sistema iniciado com sucesso!');
-
+                    
                 } catch (error) {
                     console.error('❌ Erro ao iniciar sistema:', error);
                     this.createDefaultData();
+                    this.setupEventListeners();
                     this.renderAll();
                 } finally {
                     this.isLoading = false;
                 }
             }
 
-            async loadDataWithCache() {
-                // Verificar cache local primeiro
-                const cachedData = this.loadFromCache();
-                if (cachedData) {
-                    console.log('📦 Dados carregados do cache');
-                    this.notebooks = cachedData.notebooks || [];
-                    this.emprestimos = cachedData.emprestimos || [];
-                    this.setores = cachedData.setores || [];
-
-                    // Renderizar dados do cache imediatamente
-                    this.renderAll();
-
-                    // Carregar do Firebase em background
-                    this.loadFromFirebaseBackground();
-                } else {
-                    // Carregar do Firebase
-                    await this.loadFromFirebase();
-                }
-            }
-
-            loadFromCache() {
-                try {
-                    const cached = localStorage.getItem('sistemaCache');
-                    if (!cached) return null;
-
-                    const data = JSON.parse(cached);
-                    const now = Date.now();
-                    const expiry = data.timestamp + (5 * 60 * 1000); // 5 minutos
-
-                    if (now > expiry) {
-                        localStorage.removeItem('sistemaCache');
-                        return null;
-                    }
-
-                    return data.data;
-                } catch {
-                    localStorage.removeItem('sistemaCache');
-                    return null;
-                }
-            }
-
-            saveToCache() {
-                try {
-                    const cacheData = {
-                        timestamp: Date.now(),
-                        data: {
-                            notebooks: this.notebooks,
-                            emprestimos: this.emprestimos,
-                            setores: this.setores
-                        }
-                    };
-
-                    localStorage.setItem('sistemaCache', JSON.stringify(cacheData));
-                } catch (error) {
-                    console.log('⚠️ Erro ao salvar cache:', error);
-                }
-            }
-
-            async loadFromFirebaseBackground() {
-                try {
-                    console.log('🔄 Atualizando dados do Firebase em background...');
-                    await this.loadFromFirebase();
-                    this.renderAll();
-                } catch (error) {
-                    console.log('⚠️ Erro ao atualizar do Firebase, usando dados locais');
-                }
-            }
-
             async loadFromFirebase() {
-                if (typeof firebase === 'undefined') {
-                    console.log('📦 Firebase não disponível, usando dados padrão');
-                    this.createDefaultData();
-                    return;
-                }
-
+                console.log('📡 Carregando dados do Firebase...');
+                
                 try {
-                    // Referencias Firebase
-                    const dbNotebooks = firebase.database().ref('notebooks');
-                    const dbEmprestimos = firebase.database().ref('emprestimos');
-                    const dbSetores = firebase.database().ref('setores');
-
                     const [notebooksSnap, emprestimosSnap, setoresSnap] = await Promise.all([
-                        dbNotebooks.once('value'),
-                        dbEmprestimos.once('value'),
-                        dbSetores.once('value')
+                        this.dbNotebooks.once('value'),
+                        this.dbEmprestimos.once('value'),
+                        this.dbSetores.once('value')
                     ]);
 
-                    // Processar dados
+                    // Processar notebooks
                     if (notebooksSnap.exists()) {
                         const data = notebooksSnap.val();
                         this.notebooks = Array.isArray(data) ? data.filter(Boolean) : Object.values(data || {}).filter(Boolean);
+                        console.log('📱 Notebooks carregados:', this.notebooks.length);
                     } else {
+                        console.log('📱 Criando notebooks padrão...');
                         this.notebooks = this.createDefaultNotebooks();
-                        await dbNotebooks.set(this.notebooks);
+                        await this.dbNotebooks.set(this.notebooks);
                     }
 
+                    // Processar empréstimos
                     if (emprestimosSnap.exists()) {
                         const data = emprestimosSnap.val();
                         this.emprestimos = Array.isArray(data) ? data.filter(Boolean) : Object.values(data || {}).filter(Boolean);
+                        console.log('📋 Empréstimos carregados:', this.emprestimos.length);
                     } else {
                         this.emprestimos = [];
+                        await this.dbEmprestimos.set([]);
                     }
 
+                    // Processar setores
                     if (setoresSnap.exists()) {
                         const data = setoresSnap.val();
                         this.setores = Array.isArray(data) ? data.filter(Boolean) : Object.values(data || {}).filter(Boolean);
+                        console.log('🏢 Setores carregados:', this.setores.length);
                     } else {
+                        console.log('🏢 Criando setores padrão...');
                         this.setores = this.createDefaultSetores();
-                        await dbSetores.set(this.setores);
+                        await this.dbSetores.set(this.setores);
                     }
-
-                    // Salvar no cache
-                    this.saveToCache();
-
-                    console.log('✅ Dados carregados do Firebase');
 
                 } catch (error) {
                     console.error('❌ Erro ao carregar do Firebase:', error);
-                    if (this.notebooks.length === 0) {
-                        this.createDefaultData();
-                    }
+                    this.createDefaultData();
                 }
             }
 
@@ -1053,7 +1016,6 @@
                 this.notebooks = this.createDefaultNotebooks();
                 this.emprestimos = [];
                 this.setores = this.createDefaultSetores();
-                this.saveToCache();
             }
 
             createDefaultNotebooks() {
@@ -1083,7 +1045,7 @@
             createDefaultSetores() {
                 return [
                     "Dados Mestre",
-                    "Customer Service",
+                    "Customer Service", 
                     "T.I",
                     "CD VERA CRUZ",
                     "Suprimentos",
@@ -1093,13 +1055,14 @@
                 ];
             }
 
+            // CORREÇÃO PRINCIPAL: Event Listeners com delegation adequada
             setupEventListeners() {
-                console.log('🔧 Configurando event listeners otimizados...');
+                console.log('🔧 Configurando event listeners...');
 
                 // Navegação entre tabs
-                document.querySelectorAll('.nav-tab').forEach(btn => {
+                document.querySelectorAll('.tab-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
-                        const tabName = e.target.closest('.nav-tab').dataset.tab;
+                        const tabName = e.target.closest('.tab-btn').dataset.tab;
                         this.switchTab(tabName);
                     });
                 });
@@ -1114,7 +1077,7 @@
                 }
 
                 // Botão adicionar setor
-                const btnAdicionarSetor = document.querySelector('#setores .btn-primary');
+                const btnAdicionarSetor = document.getElementById('btnAdicionarSetor');
                 if (btnAdicionarSetor) {
                     btnAdicionarSetor.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -1122,23 +1085,79 @@
                     });
                 }
 
+                // Input setor com Enter
+                const inputSetor = document.getElementById('novoSetor');
+                if (inputSetor) {
+                    inputSetor.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            this.adicionarSetor();
+                        }
+                    });
+                }
+
+                // CORREÇÃO: Modal event listeners
+                this.setupModalEventListeners();
+
                 // Navegação do calendário
                 this.setupCalendarEventListeners();
 
                 console.log('✅ Event listeners configurados');
             }
 
+            // NOVA FUNÇÃO: Setup completo de modais
+            setupModalEventListeners() {
+                console.log('🔧 Configurando event listeners de modais...');
+
+                // Event delegation para fechar modais
+                document.addEventListener('click', (e) => {
+                    // Fechar modal clicando no X ou botão Cancelar
+                    if (e.target.classList.contains('modal-close')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.fecharModal();
+                        return;
+                    }
+
+                    // Fechar modal clicando fora do conteúdo
+                    if (e.target.classList.contains('modal')) {
+                        e.preventDefault();
+                        this.fecharModal();
+                        return;
+                    }
+                });
+
+                // Fechar modal com ESC
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.fecharModal();
+                    }
+                });
+
+                // Botão confirmar devolução - CORRIGIDO
+                const btnConfirmarDevolucao = document.getElementById('confirmarDevolucaoBtn');
+                if (btnConfirmarDevolucao) {
+                    btnConfirmarDevolucao.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.processarDevolucao();
+                    });
+                }
+
+                console.log('✅ Event listeners de modais configurados');
+            }
+
             setupCalendarEventListeners() {
                 const prevMonth = document.getElementById('prevMonth');
                 const nextMonth = document.getElementById('nextMonth');
-
+                
                 if (prevMonth) {
                     prevMonth.addEventListener('click', () => {
                         this.currentMonth.setMonth(this.currentMonth.getMonth() - 1);
                         this.renderCalendario();
                     });
                 }
-
+                
                 if (nextMonth) {
                     nextMonth.addEventListener('click', () => {
                         this.currentMonth.setMonth(this.currentMonth.getMonth() + 1);
@@ -1148,6 +1167,8 @@
             }
 
             renderAll() {
+                console.log('🎨 Renderizando todas as interfaces...');
+                
                 try {
                     this.renderDashboard();
                     this.renderCalendario();
@@ -1157,85 +1178,100 @@
                     this.setMinDate();
                     this.updateNotebookOptions();
                     this.updateSetorOptions();
-
-                    console.log('✅ Interface renderizada');
+                    
+                    console.log('✅ Todas as interfaces renderizadas');
                 } catch (error) {
                     console.error('❌ Erro ao renderizar:', error);
                 }
             }
 
+            // CORREÇÃO PRINCIPAL: renderDashboard com event listeners corretos
             renderDashboard() {
+                console.log('🎨 Renderizando dashboard...');
+                
                 const container = document.getElementById('notebooksContainer');
-                if (!container) return;
-
-                if (!this.notebooks || this.notebooks.length === 0) {
-                    container.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: var(--dark-gray); border-radius: 12px;">
-                <i class="fas fa-laptop" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
-                <p>Carregando notebooks...</p>
-            </div>
-        `;
+                if (!container) {
+                    console.error('❌ Container notebooksContainer não encontrado!');
                     return;
                 }
 
+                if (!this.notebooks || this.notebooks.length === 0) {
+                    container.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: var(--dark-gray); border-radius: 12px;">
+                            <i class="fas fa-laptop" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
+                            <p>Carregando notebooks...</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Renderizar notebooks SEM onclick inline (CORREÇÃO PRINCIPAL)
                 container.innerHTML = this.notebooks.map(notebook => {
                     const isAtrasado = notebook.status === 'emprestado' && this.isAtrasado(notebook.previsaoDevolucao);
-
+                    
                     return `
-            <div class="notebook-card ${notebook.status}" data-notebook-id="${notebook.id}">
-                <div class="notebook-icon">
-                    <i class="fas fa-laptop"></i>
-                </div>
-                <div class="notebook-number">${notebook.numero}</div>
-                <div class="notebook-status status-${notebook.status}">
-                    ${notebook.status === 'disponivel' ? 'Disponível' : 'Em Uso'}
-                    ${isAtrasado ? ' (Atrasado)' : ''}
-                </div>
-                ${notebook.status === 'emprestado' ? `
-                    <div class="notebook-info">
-                        <strong>${notebook.colaborador}</strong><br>
-                        <span style="color: var(--light-orange);">${notebook.setor}</span><br>
-                        <small>Chamado: ${notebook.chamado}</small><br>
-                        <small>Devolução: ${this.formatDate(notebook.previsaoDevolucao)}</small>
-                    </div>
-                ` : '<div class="notebook-info">Pronto para empréstimo</div>'}
-                <div class="notebook-actions">
-                    ${notebook.status === 'emprestado' ? `
-                        <button 
-                            class="btn-danger btn-small devolver-btn" 
-                            data-notebook-id="${notebook.id}"
-                        >
-                            <i class="fas fa-undo"></i> Devolver
-                        </button>
-                    ` : ''}
-                </div>
-            </div>
-        `;
+                        <div class="notebook-card ${notebook.status}" data-notebook-id="${notebook.id}">
+                            <div class="notebook-icon">
+                                <i class="fas fa-laptop"></i>
+                            </div>
+                            <div class="notebook-number">${notebook.numero}</div>
+                            <div class="notebook-status status-${notebook.status}">
+                                ${notebook.status === 'disponivel' ? 'Disponível' : 'Em Uso'}
+                                ${isAtrasado ? ' (Atrasado)' : ''}
+                            </div>
+                            ${notebook.status === 'emprestado' ? `
+                                <div class="notebook-info">
+                                    <strong>${notebook.colaborador}</strong><br>
+                                    <span style="color: var(--light-orange);">${notebook.setor}</span><br>
+                                    <small>Chamado: ${notebook.chamado}</small><br>
+                                    <small>Devolução: ${this.formatDate(notebook.previsaoDevolucao)}</small>
+                                </div>
+                            ` : '<div class="notebook-info">Pronto para empréstimo</div>'}
+                            <div class="notebook-actions">
+                                ${notebook.status === 'emprestado' ? `
+                                    <button 
+                                        class="btn-danger btn-small devolver-btn" 
+                                        data-notebook-id="${notebook.id}"
+                                        style="padding: 8px 12px; font-size: 0.85rem;"
+                                    >
+                                        <i class="fas fa-undo"></i> Devolver
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
                 }).join('');
 
-                // CONFIGURAR EVENT LISTENERS APÓS RENDERIZAR HTML
+                // CORREÇÃO: Event listeners após renderizar HTML
                 this.setupNotebookEventListeners();
                 this.renderEmprestimosAtivos();
+                
+                console.log(`✅ Dashboard renderizado com ${this.notebooks.length} notebooks`);
             }
 
-            // NOVA FUNÇÃO: Configurar event listeners dos notebooks
+            // NOVA FUNÇÃO: Event listeners dos notebooks
             setupNotebookEventListeners() {
+                console.log('🔧 Configurando event listeners dos notebooks...');
+
                 // Event listeners para cards de notebooks (detalhes)
                 document.querySelectorAll('.notebook-card').forEach(card => {
                     card.addEventListener('click', (e) => {
                         // Não executar se clicou no botão devolver
                         if (e.target.closest('.devolver-btn')) return;
-
+                        
                         const notebookId = parseInt(card.getAttribute('data-notebook-id'));
                         this.mostrarDetalhesNotebook(notebookId);
                     });
                 });
 
-                // Event listeners para botões devolver
+                // Event listeners para botões devolver - CORREÇÃO PRINCIPAL
                 document.querySelectorAll('.devolver-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
+                        e.preventDefault();
                         e.stopPropagation(); // Impedir que o clique no card seja ativado
+                        
                         const notebookId = parseInt(btn.getAttribute('data-notebook-id'));
+                        console.log('🔄 Botão devolver clicado para notebook ID:', notebookId);
                         this.abrirModalDevolucao(notebookId);
                     });
                 });
@@ -1243,13 +1279,12 @@
                 console.log('✅ Event listeners dos notebooks configurados');
             }
 
-
             renderEmprestimosAtivos() {
                 const container = document.getElementById('emprestimosAtivos');
                 if (!container) return;
 
                 const ativos = this.emprestimos.filter(emp => emp.status === 'ativo');
-
+                
                 if (ativos.length === 0) {
                     container.innerHTML = `
                         <div style="text-align: center; padding: 40px; opacity: 0.7;">
@@ -1264,120 +1299,94 @@
                         const hoje = new Date();
                         const isAtrasado = previsao < hoje;
                         const diasRestantes = Math.ceil((previsao - hoje) / (1000 * 60 * 60 * 24));
-
+                        
                         return `
-                            <div style="background: var(--black); border-radius: 8px; padding: 20px; margin-bottom: 15px; border-left: 4px solid var(--primary-orange); cursor: pointer;" onclick="sistema.mostrarDetalhesEmprestimo(${emprestimo.id})">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <span style="font-size: 1.1rem; font-weight: 700; color: var(--primary-orange);">${notebook ? notebook.numero : 'N/A'}</span>
-                                    <span style="padding: 4px 12px; border-radius: 15px; font-size: 0.8rem; font-weight: 600; background: ${isAtrasado ? 'var(--red)' : 'var(--green)'}; color: var(--white);">
-                                        ${isAtrasado ? `Atrasado (${Math.abs(diasRestantes)} dias)` :
-                                diasRestantes === 0 ? 'Vence Hoje' :
-                                    diasRestantes === 1 ? 'Vence Amanhã' :
-                                        `${diasRestantes} dias restantes`}
+                            <div class="emprestimo-item" data-emprestimo-id="${emprestimo.id}">
+                                <div class="emprestimo-header">
+                                    <span class="emprestimo-notebook">${notebook ? notebook.numero : 'N/A'}</span>
+                                    <span class="emprestimo-status ${isAtrasado ? 'status-atrasado' : 'status-ativo'}">
+                                        ${isAtrasado ? `Atrasado (${Math.abs(diasRestantes)} dias)` : 
+                                          diasRestantes === 0 ? 'Vence Hoje' :
+                                          diasRestantes === 1 ? 'Vence Amanhã' :
+                                          `${diasRestantes} dias restantes`}
                                     </span>
                                 </div>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.9rem;">
-                                    <div style="display: flex; justify-content: space-between;"><strong style="color: var(--light-orange);">Colaborador</strong><span>${emprestimo.colaborador}</span></div>
-                                    <div style="display: flex; justify-content: space-between;"><strong style="color: var(--light-orange);">Setor</strong><span>${emprestimo.setor}</span></div>
-                                    <div style="display: flex; justify-content: space-between;"><strong style="color: var(--light-orange);">Chamado</strong><span>${emprestimo.chamado}</span></div>
-                                    <div style="display: flex; justify-content: space-between;"><strong style="color: var(--light-orange);">Devolução</strong><span>${this.formatDate(emprestimo.previsaoDevolucao)}</span></div>
+                                <div class="emprestimo-info">
+                                    <div><strong>Colaborador</strong><span>${emprestimo.colaborador}</span></div>
+                                    <div><strong>Setor</strong><span>${emprestimo.setor}</span></div>
+                                    <div><strong>Chamado</strong><span>${emprestimo.chamado}</span></div>
+                                    <div><strong>Devolução</strong><span>${this.formatDate(emprestimo.previsaoDevolucao)}</span></div>
                                 </div>
                             </div>
                         `;
                     }).join('');
+
+                    // Event listeners para empréstimos
+                    document.querySelectorAll('.emprestimo-item').forEach(item => {
+                        item.addEventListener('click', (e) => {
+                            const emprestimoId = parseInt(item.getAttribute('data-emprestimo-id'));
+                            this.mostrarDetalhesEmprestimo(emprestimoId);
+                        });
+                    });
                 }
             }
 
             renderCalendario() {
-                const calendar = document.getElementById('calendar');
-                const monthYear = document.getElementById('monthYear');
-
-                if (!calendar || !monthYear) return;
+                const monthTitle = document.getElementById('currentMonth');
+                const container = document.getElementById('calendarioGrid');
+                
+                if (!monthTitle || !container) return;
 
                 const year = this.currentMonth.getFullYear();
                 const month = this.currentMonth.getMonth();
+                
+                const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                
+                monthTitle.textContent = `${meses[month]} ${year}`;
 
-                const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                monthYear.textContent = `${meses[month]} ${year}`;
+                // Implementação básica do calendário
+                container.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: var(--black); border-radius: 8px; padding: 2px;">
+                        <div style="background: var(--primary-orange); color: var(--white); padding: 15px; text-align: center; font-weight: 700;">Dom</div>
+                        <div style="background: var(--primary-orange); color: var(--white); padding: 15px; text-align: center; font-weight: 700;">Seg</div>
+                        <div style="background: var(--primary-orange); color: var(--white); padding: 15px; text-align: center; font-weight: 700;">Ter</div>
+                        <div style="background: var(--primary-orange); color: var(--white); padding: 15px; text-align: center; font-weight: 700;">Qua</div>
+                        <div style="background: var(--primary-orange); color: var(--white); padding: 15px; text-align: center; font-weight: 700;">Qui</div>
+                        <div style="background: var(--primary-orange); color: var(--white); padding: 15px; text-align: center; font-weight: 700;">Sex</div>
+                        <div style="background: var(--primary-orange); color: var(--white); padding: 15px; text-align: center; font-weight: 700;">Sáb</div>
+                        ${this.generateCalendarDays(year, month)}
+                    </div>
+                `;
+            }
 
+            generateCalendarDays(year, month) {
                 const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
                 const startDate = new Date(firstDay);
                 startDate.setDate(startDate.getDate() - firstDay.getDay());
 
-                let calendarHTML = `
-                    <div style="background: var(--black); border-radius: 8px; overflow: hidden; border: 1px solid var(--medium-gray);">
-                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); background: var(--primary-orange);">
-                            <div style="padding: 15px; text-align: center; font-weight: 700; color: var(--white);">Dom</div>
-                            <div style="padding: 15px; text-align: center; font-weight: 700; color: var(--white);">Seg</div>
-                            <div style="padding: 15px; text-align: center; font-weight: 700; color: var(--white);">Ter</div>
-                            <div style="padding: 15px; text-align: center; font-weight: 700; color: var(--white);">Qua</div>
-                            <div style="padding: 15px; text-align: center; font-weight: 700; color: var(--white);">Qui</div>
-                            <div style="padding: 15px; text-align: center; font-weight: 700; color: var(--white);">Sex</div>
-                            <div style="padding: 15px; text-align: center; font-weight: 700; color: var(--white);">Sáb</div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: repeat(7, 1fr);">
-                `;
-
+                let days = '';
                 for (let i = 0; i < 42; i++) {
                     const currentDate = new Date(startDate);
                     currentDate.setDate(startDate.getDate() + i);
-
+                    
                     const isCurrentMonth = currentDate.getMonth() === month;
                     const isToday = currentDate.toDateString() === new Date().toDateString();
-
-                    const emprestimosNaData = this.emprestimos.filter(emp => {
-                        if (emp.status !== 'ativo') return false;
-                        const previsaoData = new Date(emp.previsaoDevolucao);
-                        return previsaoData.toDateString() === currentDate.toDateString();
-                    });
-
-                    let dayStyle = `
-                        min-height: 80px;
-                        padding: 8px;
-                        border-right: 1px solid var(--medium-gray);
-                        border-bottom: 1px solid var(--medium-gray);
-                        cursor: pointer;
-                        position: relative;
-                        display: flex;
-                        flex-direction: column;
-                        background: ${!isCurrentMonth ? 'var(--dark-gray)' : 'var(--black)'};
-                        opacity: ${!isCurrentMonth ? '0.3' : '1'};
-                    `;
-
+                    
+                    let style = 'background: var(--dark-gray); padding: 15px; text-align: center; min-height: 80px; display: flex; align-items: center; justify-content: center;';
+                    
+                    if (!isCurrentMonth) {
+                        style += 'opacity: 0.3;';
+                    }
+                    
                     if (isToday) {
-                        dayStyle += 'background: var(--primary-orange) !important; color: var(--white); font-weight: 700;';
+                        style += 'background: var(--primary-orange) !important; color: var(--white); font-weight: 700;';
                     }
 
-                    if (emprestimosNaData.length > 0 && !isToday) {
-                        const emprestimosVencidos = emprestimosNaData.filter(emp => {
-                            const previsao = new Date(emp.previsaoDevolucao);
-                            const hoje = new Date();
-                            return previsao < hoje;
-                        });
-
-                        if (emprestimosVencidos.length > 0) {
-                            dayStyle += 'background: #F44336 !important; color: var(--white);';
-                        } else {
-                            dayStyle += 'background: #FFC107 !important; color: var(--black);';
-                        }
-                    }
-
-                    calendarHTML += `
-                        <div onclick="sistema.mostrarEmprestimosData('${currentDate.toISOString()}')" style="${dayStyle}">
-                            <span style="font-size: 1.1rem; font-weight: 600;">${currentDate.getDate()}</span>
-                            ${emprestimosNaData.length > 0 ? `
-                                <div style="position: absolute; bottom: 4px; right: 4px;">
-                                    <span style="background: var(--white); color: #333; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;">
-                                        ${emprestimosNaData.length}
-                                    </span>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
+                    days += `<div style="${style}">${currentDate.getDate()}</div>`;
                 }
-
-                calendarHTML += '</div></div>';
-                calendar.innerHTML = calendarHTML;
+                return days;
             }
 
             renderHistorico() {
@@ -1387,7 +1396,7 @@
                 if (!this.emprestimos || this.emprestimos.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="7" style="text-align: center; padding: 40px; color: var(--white);">
+                            <td colspan="7" style="text-align: center; padding: 40px; opacity: 0.7;">
                                 <i class="fas fa-history" style="font-size: 2rem; margin-bottom: 10px; color: var(--primary-orange);"></i><br>
                                 Nenhum empréstimo registrado
                             </td>
@@ -1396,13 +1405,13 @@
                     return;
                 }
 
-                const historicoFiltrado = [...this.emprestimos].sort((a, b) => new Date(b.dataEntrega) - new Date(a.dataEntrega));
+                const historicoOrdenado = [...this.emprestimos].sort((a, b) => new Date(b.dataEntrega) - new Date(a.dataEntrega));
 
-                tbody.innerHTML = historicoFiltrado.map(emprestimo => {
+                tbody.innerHTML = historicoOrdenado.map(emprestimo => {
                     const notebook = this.notebooks.find(nb => nb.id === emprestimo.notebookId);
                     let statusText = 'Ativo';
                     let statusColor = '#FFC107';
-
+                    
                     if (emprestimo.status === 'devolvido') {
                         statusText = 'Devolvido';
                         statusColor = '#4CAF50';
@@ -1416,7 +1425,7 @@
                     }
 
                     return `
-                        <tr onclick="sistema.mostrarDetalhesEmprestimo(${emprestimo.id})" style="cursor: pointer; color: var(--white);">
+                        <tr style="cursor: pointer;" data-emprestimo-id="${emprestimo.id}">
                             <td style="padding: 12px; border-bottom: 1px solid var(--medium-gray);"><strong style="color: var(--primary-orange);">${notebook ? notebook.numero : 'N/A'}</strong></td>
                             <td style="padding: 12px; border-bottom: 1px solid var(--medium-gray);">${emprestimo.colaborador}</td>
                             <td style="padding: 12px; border-bottom: 1px solid var(--medium-gray);">${emprestimo.setor}</td>
@@ -1427,6 +1436,14 @@
                         </tr>
                     `;
                 }).join('');
+
+                // Event listeners para linhas do histórico
+                document.querySelectorAll('#historicoTableBody tr[data-emprestimo-id]').forEach(row => {
+                    row.addEventListener('click', (e) => {
+                        const emprestimoId = parseInt(row.getAttribute('data-emprestimo-id'));
+                        this.mostrarDetalhesEmprestimo(emprestimoId);
+                    });
+                });
             }
 
             renderSetores() {
@@ -1434,37 +1451,36 @@
                 if (!container) return;
 
                 if (!this.setores || this.setores.length === 0) {
-                    container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--white);">Nenhum setor cadastrado</div>';
+                    container.innerHTML = '<div style="text-align: center; padding: 20px; opacity: 0.7;"><p>Nenhum setor cadastrado</p></div>';
                     return;
                 }
 
                 container.innerHTML = this.setores.map((setor, index) => `
-                    <div style="background: var(--black); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary-orange);">
-                        <span style="color: var(--white); font-weight: 500;">${setor}</span>
-                        <button class="btn-danger btn-small" onclick="sistema.removerSetor(${index})">
-                            <i class="fas fa-times"></i>
-                        </button>
+                    <div class="setor-item">
+                        <span>${setor}</span>
+                        <button class="setor-remove" data-setor-index="${index}">&times;</button>
                     </div>
                 `).join('');
+
+                // Event listeners para remoção de setores
+                document.querySelectorAll('.setor-remove').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const index = parseInt(btn.getAttribute('data-setor-index'));
+                        this.removerSetor(index);
+                    });
+                });
             }
 
             updateStats() {
                 const disponiveisCount = this.notebooks.filter(nb => nb.status === 'disponivel').length;
                 const emprestadosCount = this.notebooks.filter(nb => nb.status === 'emprestado').length;
-                const totalCount = this.notebooks.length;
-
-                const elementos = [
-                    ['disponiveisCount', disponiveisCount],
-                    ['emprestadosCount', emprestadosCount],
-                    ['totalNotebooks', totalCount],
-                    ['disponiveis', disponiveisCount],
-                    ['emUso', emprestadosCount]
-                ];
-
-                elementos.forEach(([id, value]) => {
-                    const el = document.getElementById(id);
-                    if (el) el.textContent = value;
-                });
+                
+                const disponiveisEl = document.getElementById('disponiveisCount');
+                const emprestadosEl = document.getElementById('emprestadosCount');
+                
+                if (disponiveisEl) disponiveisEl.textContent = disponiveisCount;
+                if (emprestadosEl) emprestadosEl.textContent = emprestadosCount;
             }
 
             updateNotebookOptions() {
@@ -1472,9 +1488,9 @@
                 if (!select) return;
 
                 const notebooksDisponiveis = this.notebooks.filter(nb => nb.status === 'disponivel');
-
+                
                 select.innerHTML = '<option value="">Selecione um notebook disponível</option>';
-
+                
                 if (notebooksDisponiveis.length === 0) {
                     select.innerHTML = '<option value="">Nenhum notebook disponível</option>';
                     select.disabled = true;
@@ -1491,13 +1507,14 @@
 
             updateSetorOptions() {
                 const selects = ['setorColaborador', 'filtroSetor'];
-
+                
                 selects.forEach(selectId => {
                     const select = document.getElementById(selectId);
                     if (!select) return;
-
+                    
+                    const valorAtual = select.value;
                     const placeholder = selectId === 'filtroSetor' ? 'Todos os setores' : 'Selecione o setor';
-
+                    
                     select.innerHTML = `<option value="">${placeholder}</option>`;
                     this.setores.forEach(setor => {
                         const option = document.createElement('option');
@@ -1505,6 +1522,7 @@
                         option.textContent = setor;
                         select.appendChild(option);
                     });
+                    select.value = valorAtual;
                 });
             }
 
@@ -1512,52 +1530,26 @@
                 const hoje = new Date();
                 const amanha = new Date(hoje);
                 amanha.setDate(hoje.getDate() + 1);
-
+                
                 const minDate = amanha.toISOString().split('T')[0];
-
+                
                 const dateInput = document.getElementById('dataPrevisaoDevolucao');
                 if (dateInput) {
                     dateInput.min = minDate;
                 }
             }
 
-            switchTab(tabName) {
-                document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-
-                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-                document.getElementById(tabName).classList.add('active');
-
-                // Renderizar tab específica se necessário
-                setTimeout(() => {
-                    switch (tabName) {
-                        case 'dashboard':
-                            this.renderDashboard();
-                            break;
-                        case 'calendario':
-                            this.renderCalendario();
-                            break;
-                        case 'historico':
-                            this.renderHistorico();
-                            break;
-                        case 'setores':
-                            this.renderSetores();
-                            break;
-                    }
-                }, 100);
-            }
-
-            // IMPLEMENTAÇÃO DO MODAL DE DEVOLUÇÃO
+            // FUNÇÃO PRINCIPAL: Modal de Devolução CORRIGIDO
             abrirModalDevolucao(notebookId) {
                 console.log('🔄 Abrindo modal de devolução para notebook ID:', notebookId);
-
+                
                 const notebook = this.notebooks.find(nb => nb.id === notebookId);
                 if (!notebook || notebook.status !== 'emprestado') {
                     this.showToast('❌ Notebook não encontrado ou não está emprestado!', 'error');
                     return;
                 }
 
-                const emprestimo = this.emprestimos.find(emp =>
+                const emprestimo = this.emprestimos.find(emp => 
                     emp.notebookId === notebookId && emp.status === 'ativo'
                 );
 
@@ -1566,115 +1558,222 @@
                     return;
                 }
 
-                // Criar modal se não existir
-                let modal = document.getElementById('modalDevolucao');
-                if (!modal) {
-                    modal = this.criarModalDevolucao();
-                }
-
-                // Preencher informações
-                const infoDiv = modal.querySelector('#infoDevolucao');
+                // Preencher informações no modal
+                const infoDiv = document.getElementById('infoDevolucaoNotebook');
                 if (infoDiv) {
                     const diasEmprestado = Math.floor((new Date() - new Date(emprestimo.dataEntrega)) / (1000 * 60 * 60 * 24));
                     const isAtrasado = this.isAtrasado(notebook.previsaoDevolucao);
                     const diasAtraso = isAtrasado ? Math.floor((new Date() - new Date(notebook.previsaoDevolucao)) / (1000 * 60 * 60 * 24)) : 0;
 
                     infoDiv.innerHTML = `
-                <div style="background: var(--dark-gray); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--primary-orange);">
-                    <h3 style="color: var(--primary-orange); margin-bottom: 15px;">
-                        <i class="fas fa-laptop"></i> ${notebook.numero}
-                    </h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                        <div><strong style="color: var(--light-orange);">Colaborador:</strong><br>${notebook.colaborador}</div>
-                        <div><strong style="color: var(--light-orange);">Setor:</strong><br>${notebook.setor}</div>
-                        <div><strong style="color: var(--light-orange);">Chamado:</strong><br>${notebook.chamado}</div>
-                        <div><strong style="color: var(--light-orange);">Tempo Emprestado:</strong><br>${diasEmprestado} dia(s)</div>
-                    </div>
-                    ${isAtrasado ? `
-                        <div style="background: rgba(244, 67, 54, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #F44336;">
-                            <strong style="color: #F44336;"><i class="fas fa-exclamation-triangle"></i> ATRASADO</strong><br>
-                            <span style="color: #ffcdd2;">${diasAtraso} dia(s) em atraso</span>
+                        <h3 style="color: var(--primary-orange); margin-bottom: 15px;">
+                            <i class="fas fa-laptop"></i> ${notebook.numero}
+                        </h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div><strong style="color: var(--light-orange);">Colaborador:</strong><br>${notebook.colaborador}</div>
+                            <div><strong style="color: var(--light-orange);">Setor:</strong><br>${notebook.setor}</div>
+                            <div><strong style="color: var(--light-orange);">Chamado:</strong><br>${notebook.chamado}</div>
+                            <div><strong style="color: var(--light-orange);">Tempo Emprestado:</strong><br>${diasEmprestado} dia(s)</div>
                         </div>
-                    ` : `
-                        <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #4CAF50;">
-                            <strong style="color: #4CAF50;"><i class="fas fa-check-circle"></i> NO PRAZO</strong>
-                        </div>
-                    `}
-                </div>
-            `;
+                        ${isAtrasado ? `
+                            <div style="background: rgba(244, 67, 54, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #F44336;">
+                                <strong style="color: #F44336;"><i class="fas fa-exclamation-triangle"></i> ATRASADO</strong><br>
+                                <span style="color: #ffcdd2;">${diasAtraso} dia(s) em atraso</span>
+                            </div>
+                        ` : `
+                            <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #4CAF50;">
+                                <strong style="color: #4CAF50;"><i class="fas fa-check-circle"></i> NO PRAZO</strong>
+                            </div>
+                        `}
+                    `;
                 }
-
+                
                 // Limpar observações
-                const observacoes = modal.querySelector('#observacoesDevolucao');
+                const observacoes = document.getElementById('observacoesDevolucao');
                 if (observacoes) {
                     observacoes.value = '';
                 }
-
-                // Armazenar dados no modal
+                
+                // Armazenar dados no modal para uso posterior
+                const modal = document.getElementById('modalDevolucao');
                 modal.setAttribute('data-notebook-id', notebookId);
                 modal.setAttribute('data-emprestimo-id', emprestimo.id);
-
+                
                 // Mostrar modal
                 modal.classList.add('active');
-
-                // Configurar listener do botão confirmar
-                setTimeout(() => {
-                    this.setupModalDevolucaoListener();
-                }, 100);
-
+                
                 console.log('✅ Modal de devolução aberto para:', notebook.numero);
             }
 
+            // FUNÇÃO PRINCIPAL: Processar Devolução CORRIGIDO
+            async processarDevolucao() {
+                console.log('✅ Processando devolução...');
+                
+                const modal = document.getElementById('modalDevolucao');
+                if (!modal) {
+                    this.showToast('❌ Modal de devolução não encontrado!', 'error');
+                    return;
+                }
+                
+                const notebookId = parseInt(modal.getAttribute('data-notebook-id'));
+                const emprestimoId = parseInt(modal.getAttribute('data-emprestimo-id'));
+                const observacoes = document.getElementById('observacoesDevolucao')?.value?.trim() || '';
+                
+                console.log('📋 Dados da devolução:', { notebookId, emprestimoId, observacoes });
+                
+                if (!notebookId || !emprestimoId) {
+                    this.showToast('❌ Dados da devolução inválidos!', 'error');
+                    return;
+                }
+                
+                // Encontrar notebook e empréstimo
+                const notebook = this.notebooks.find(nb => nb.id === notebookId);
+                const emprestimo = this.emprestimos.find(emp => emp.id === emprestimoId);
+                
+                if (!notebook) {
+                    this.showToast('❌ Notebook não encontrado!', 'error');
+                    return;
+                }
+                
+                if (!emprestimo || emprestimo.status !== 'ativo') {
+                    this.showToast('❌ Empréstimo não encontrado ou não está ativo!', 'error');
+                    return;
+                }
+                
+                // Desabilitar botão durante processamento
+                const btnConfirmar = document.getElementById('confirmarDevolucaoBtn');
+                if (btnConfirmar) {
+                    const textoOriginal = btnConfirmar.innerHTML;
+                    btnConfirmar.disabled = true;
+                    btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+                    
+                    try {
+                        console.log('💾 Atualizando dados da devolução...');
+                        
+                        const agora = new Date().toISOString();
+                        const colaboradorAnterior = notebook.colaborador;
+                        
+                        // Atualizar empréstimo para devolvido
+                        emprestimo.status = 'devolvido';
+                        emprestimo.dataDevolucao = agora;
+                        emprestimo.observacoesDevolucao = observacoes;
+                        
+                        // Liberar notebook - LIMPAR TODOS OS DADOS
+                        notebook.status = 'disponivel';
+                        notebook.colaborador = null;
+                        notebook.setor = null;
+                        notebook.chamado = null;
+                        notebook.dataEntrega = null;
+                        notebook.previsaoDevolucao = null;
+                        
+                        // Salvar no Firebase
+                        await this.saveToFirebase();
+                        
+                        // Fechar modal
+                        this.fecharModal();
+                        
+                        // Atualizar TODA a interface
+                        this.renderAll();
+                        
+                        this.showToast(`✅ Notebook ${notebook.numero} devolvido por ${colaboradorAnterior}!`, 'success');
+                        
+                        console.log('🎉 Devolução concluída com sucesso!', {
+                            notebook: notebook.numero,
+                            colaborador: colaboradorAnterior,
+                            novoStatus: notebook.status
+                        });
+                        
+                    } catch (error) {
+                        console.error('❌ Erro ao processar devolução:', error);
+                        
+                        // Reverter mudanças em caso de erro
+                        emprestimo.status = 'ativo';
+                        emprestimo.dataDevolucao = null;
+                        emprestimo.observacoesDevolucao = null;
+                        
+                        notebook.status = 'emprestado';
+                        
+                        this.showToast('❌ Erro ao processar devolução. Tente novamente.', 'error');
+                        
+                        // Reabilitar botão
+                        btnConfirmar.disabled = false;
+                        btnConfirmar.innerHTML = textoOriginal;
+                    }
+                }
+            }
+
+            // CORREÇÃO PRINCIPAL: Função para fechar modal
             fecharModal() {
-                document.querySelectorAll('.modal').forEach(modal => {
+                console.log('❌ Fechando modal...');
+                
+                // Fechar todos os modais ativos
+                document.querySelectorAll('.modal.active').forEach(modal => {
                     modal.classList.remove('active');
                 });
+                
+                // Limpar dados específicos do modal de devolução
+                const modalDevolucao = document.getElementById('modalDevolucao');
+                if (modalDevolucao) {
+                    modalDevolucao.removeAttribute('data-notebook-id');
+                    modalDevolucao.removeAttribute('data-emprestimo-id');
+                    
+                    const observacoes = modalDevolucao.querySelector('#observacoesDevolucao');
+                    if (observacoes) observacoes.value = '';
+                    
+                    const btnConfirmar = modalDevolucao.querySelector('#confirmarDevolucaoBtn');
+                    if (btnConfirmar) {
+                        btnConfirmar.disabled = false;
+                        btnConfirmar.innerHTML = '<i class="fas fa-check"></i> Confirmar Devolução';
+                    }
+                }
+                
+                console.log('✅ Modal fechado');
             }
 
             async criarSolicitacao() {
-                const dados = {
-                    nome: document.getElementById('nomeColaborador')?.value?.trim(),
-                    setor: document.getElementById('setorColaborador')?.value,
-                    notebookId: parseInt(document.getElementById('notebookSelecionado')?.value),
-                    chamado: document.getElementById('numeroChamado')?.value?.trim(),
-                    motivo: document.getElementById('motivoEmprestimo')?.value?.trim(),
-                    previsaoDevolucao: document.getElementById('dataPrevisaoDevolucao')?.value
-                };
+                console.log('📝 Processando nova solicitação...');
+
+                const nome = document.getElementById('nomeColaborador')?.value?.trim();
+                const setor = document.getElementById('setorColaborador')?.value;
+                const notebookId = parseInt(document.getElementById('notebookSelecionado')?.value);
+                const chamado = document.getElementById('numeroChamado')?.value?.trim();
+                const motivo = document.getElementById('motivoEmprestimo')?.value?.trim();
+                const previsaoDevolucao = document.getElementById('dataPrevisaoDevolucao')?.value;
 
                 // Validações
-                if (!dados.nome || dados.nome.length < 2) {
-                    this.showToast('Nome deve ter pelo menos 2 caracteres!', 'error');
+                if (!nome || nome.length < 2) {
+                    this.showToast('Nome do colaborador deve ter pelo menos 2 caracteres!', 'error');
                     return;
                 }
 
-                if (!dados.setor) {
+                if (!setor) {
                     this.showToast('Selecione um setor!', 'error');
                     return;
                 }
 
-                if (!dados.notebookId || isNaN(dados.notebookId)) {
+                if (!notebookId || isNaN(notebookId)) {
                     this.showToast('Selecione um notebook!', 'error');
                     return;
                 }
 
-                if (!dados.chamado || dados.chamado.length < 3) {
+                if (!chamado || chamado.length < 3) {
                     this.showToast('Número do chamado deve ter pelo menos 3 caracteres!', 'error');
                     return;
                 }
 
-                if (!dados.motivo || dados.motivo.length < 3) {
+                if (!motivo || motivo.length < 3) {
                     this.showToast('Motivo deve ter pelo menos 3 caracteres!', 'error');
                     return;
                 }
 
-                if (!dados.previsaoDevolucao) {
+                if (!previsaoDevolucao) {
                     this.showToast('Selecione a data de devolução!', 'error');
                     return;
                 }
 
-                const notebook = this.notebooks.find(nb => nb.id === dados.notebookId);
+                const notebook = this.notebooks.find(nb => nb.id === notebookId);
                 if (!notebook || notebook.status !== 'disponivel') {
-                    this.showToast('Notebook não está disponível!', 'error');
+                    this.showToast('Notebook selecionado não está disponível!', 'error');
                     this.updateNotebookOptions();
                     return;
                 }
@@ -1682,48 +1781,47 @@
                 try {
                     const agora = new Date().toISOString();
                     const emprestimoId = Date.now();
-
+                    
                     const novoEmprestimo = {
                         id: emprestimoId,
                         notebookId: notebook.id,
-                        colaborador: dados.nome,
-                        setor: dados.setor,
-                        chamado: dados.chamado,
-                        motivo: dados.motivo,
+                        colaborador: nome,
+                        setor: setor,
+                        chamado: chamado,
+                        motivo: motivo,
                         dataEntrega: agora,
-                        previsaoDevolucao: dados.previsaoDevolucao,
+                        previsaoDevolucao: previsaoDevolucao,
                         status: 'ativo'
                     };
 
                     notebook.status = 'emprestado';
-                    notebook.colaborador = dados.nome;
-                    notebook.setor = dados.setor;
-                    notebook.chamado = dados.chamado;
+                    notebook.colaborador = nome;
+                    notebook.setor = setor;
+                    notebook.chamado = chamado;
                     notebook.dataEntrega = agora;
-                    notebook.previsaoDevolucao = dados.previsaoDevolucao;
+                    notebook.previsaoDevolucao = previsaoDevolucao;
 
                     this.emprestimos.push(novoEmprestimo);
 
                     await this.saveToFirebase();
-                    this.saveToCache();
 
                     document.getElementById('formSolicitacao').reset();
                     this.setMinDate();
                     this.renderAll();
 
-                    this.showToast(`✅ Notebook ${notebook.numero} emprestado para ${dados.nome}!`, 'success');
+                    this.showToast(`✅ Notebook ${notebook.numero} emprestado para ${nome}!`, 'success');
                     this.switchTab('dashboard');
-
+                    
                 } catch (error) {
                     console.error('❌ Erro ao criar empréstimo:', error);
-                    this.showToast('Erro ao processar empréstimo', 'error');
+                    this.showToast('Erro ao processar empréstimo. Tente novamente.', 'error');
                 }
             }
 
             async adicionarSetor() {
                 const input = document.getElementById('novoSetor');
                 if (!input) return;
-
+                
                 const novoSetor = input.value.trim();
 
                 if (!novoSetor) {
@@ -1732,21 +1830,20 @@
                 }
 
                 if (this.setores.includes(novoSetor)) {
-                    this.showToast('Este setor já existe!', 'error');
+                    this.showToast('Este setor já existe!', 'warning');
                     return;
                 }
 
                 try {
                     this.setores.push(novoSetor);
                     await this.saveToFirebase();
-                    this.saveToCache();
-
+                    
                     input.value = '';
                     this.renderSetores();
                     this.updateSetorOptions();
-
+                    
                     this.showToast(`✅ Setor "${novoSetor}" adicionado!`, 'success');
-
+                    
                 } catch (error) {
                     console.error('❌ Erro ao adicionar setor:', error);
                     this.setores = this.setores.filter(s => s !== novoSetor);
@@ -1761,13 +1858,12 @@
                 try {
                     this.setores.splice(index, 1);
                     await this.saveToFirebase();
-                    this.saveToCache();
-
+                    
                     this.renderSetores();
                     this.updateSetorOptions();
-
+                    
                     this.showToast(`✅ Setor "${setor}" removido!`, 'success');
-
+                    
                 } catch (error) {
                     console.error('❌ Erro ao remover setor:', error);
                     this.showToast('Erro ao remover setor', 'error');
@@ -1775,25 +1871,49 @@
             }
 
             async saveToFirebase() {
-                if (typeof firebase === 'undefined') {
-                    console.log('📦 Firebase não disponível, salvando apenas localmente');
-                    return;
-                }
-
                 try {
-                    const database = firebase.database();
+                    console.log('💾 Salvando no Firebase...');
+                    
                     await Promise.all([
-                        database.ref('notebooks').set(this.notebooks),
-                        database.ref('emprestimos').set(this.emprestimos),
-                        database.ref('setores').set(this.setores)
+                        this.dbNotebooks.set(this.notebooks),
+                        this.dbEmprestimos.set(this.emprestimos),
+                        this.dbSetores.set(this.setores)
                     ]);
-
+                    
                     console.log('✅ Dados salvos no Firebase');
-
+                    
                 } catch (error) {
                     console.error('❌ Erro ao salvar no Firebase:', error);
-                    // Continuar funcionando offline
+                    throw error;
                 }
+            }
+
+            switchTab(tabName) {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+
+                setTimeout(() => {
+                    switch(tabName) {
+                        case 'dashboard':
+                            this.renderDashboard();
+                            break;
+                        case 'calendario':
+                            this.renderCalendario();
+                            break;
+                        case 'solicitar':
+                            this.updateNotebookOptions();
+                            break;
+                        case 'historico':
+                            this.renderHistorico();
+                            break;
+                        case 'setores':
+                            this.renderSetores();
+                            break;
+                    }
+                }, 100);
             }
 
             // Funções auxiliares
@@ -1801,11 +1921,58 @@
                 const notebook = this.notebooks.find(nb => nb.id === id);
                 if (!notebook) return;
 
-                let detalhes = `Notebook: ${notebook.numero}\nSérie: ${notebook.serie}\nRFID: ${notebook.rfid}\nStatus: ${notebook.status}`;
-                if (notebook.colaborador) {
-                    detalhes += `\n\nEmprestado para: ${notebook.colaborador}\nSetor: ${notebook.setor}\nChamado: ${notebook.chamado}`;
+                const modal = document.getElementById('modalDetalhes');
+                const content = document.getElementById('detalhesEmprestimoContent');
+                
+                if (!modal || !content) return;
+
+                let detalhes = `
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Notebook:</span>
+                        <span class="detalhe-valor">${notebook.numero}</span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Série:</span>
+                        <span class="detalhe-valor">${notebook.serie}</span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">RFID:</span>
+                        <span class="detalhe-valor">${notebook.rfid}</span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Status:</span>
+                        <span class="detalhe-valor">${notebook.status === 'disponivel' ? 'Disponível' : 'Em Uso'}</span>
+                    </div>
+                `;
+
+                if (notebook.modelo) {
+                    detalhes += `
+                        <div class="detalhe-item">
+                            <span class="detalhe-label">Modelo:</span>
+                            <span class="detalhe-valor">${notebook.modelo}</span>
+                        </div>
+                    `;
                 }
-                alert(detalhes);
+
+                if (notebook.colaborador) {
+                    detalhes += `
+                        <div class="detalhe-item">
+                            <span class="detalhe-label">Emprestado para:</span>
+                            <span class="detalhe-valor">${notebook.colaborador}</span>
+                        </div>
+                        <div class="detalhe-item">
+                            <span class="detalhe-label">Setor:</span>
+                            <span class="detalhe-valor">${notebook.setor}</span>
+                        </div>
+                        <div class="detalhe-item">
+                            <span class="detalhe-label">Chamado:</span>
+                            <span class="detalhe-valor">${notebook.chamado}</span>
+                        </div>
+                    `;
+                }
+
+                content.innerHTML = detalhes;
+                modal.classList.add('active');
             }
 
             mostrarDetalhesEmprestimo(id) {
@@ -1813,40 +1980,49 @@
                 if (!emprestimo) return;
 
                 const notebook = this.notebooks.find(nb => nb.id === emprestimo.notebookId);
+                
+                const modal = document.getElementById('modalDetalhes');
+                const content = document.getElementById('detalhesEmprestimoContent');
+                
+                if (!modal || !content) return;
 
-                let detalhes = `Empréstimo: ${notebook ? notebook.numero : 'N/A'}\nColaborador: ${emprestimo.colaborador}\nSetor: ${emprestimo.setor}\nChamado: ${emprestimo.chamado}\nMotivo: ${emprestimo.motivo}`;
-                alert(detalhes);
-            }
+                const detalhes = `
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Notebook:</span>
+                        <span class="detalhe-valor">${notebook ? notebook.numero : 'N/A'}</span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Colaborador:</span>
+                        <span class="detalhe-valor">${emprestimo.colaborador}</span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Setor:</span>
+                        <span class="detalhe-valor">${emprestimo.setor}</span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Chamado:</span>
+                        <span class="detalhe-valor">${emprestimo.chamado}</span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Motivo:</span>
+                        <span class="detalhe-valor">${emprestimo.motivo}</span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Data Entrega:</span>
+                        <span class="detalhe-valor">${this.formatDateTime(emprestimo.dataEntrega)}</span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Previsão Devolução:</span>
+                        <span class="detalhe-valor">${this.formatDate(emprestimo.previsaoDevolucao)}</span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Status:</span>
+                        <span class="detalhe-valor">${emprestimo.status === 'ativo' ? 'Ativo' : 'Devolvido'}</span>
+                    </div>
+                `;
 
-            mostrarEmprestimosData(dataISO) {
-                const data = new Date(dataISO);
-                const emprestimosNaData = this.emprestimos.filter(emp => {
-                    if (emp.status !== 'ativo') return false;
-                    const previsaoData = new Date(emp.previsaoDevolucao);
-                    return previsaoData.toDateString() === data.toDateString();
-                });
-
-                const dataFormatada = this.formatDate(data.toISOString());
-
-                if (emprestimosNaData.length === 0) {
-                    alert(`📅 ${dataFormatada}\n\nNenhum empréstimo com devolução prevista para esta data.`);
-                    return;
-                }
-
-                let detalhes = `📅 ${dataFormatada}\n`;
-                detalhes += `📋 ${emprestimosNaData.length} empréstimo(s) com devolução prevista:\n\n`;
-
-                emprestimosNaData.forEach((emp, index) => {
-                    const notebook = this.notebooks.find(nb => nb.id === emp.notebookId);
-                    const isAtrasado = new Date(emp.previsaoDevolucao) < new Date();
-
-                    detalhes += `${index + 1}. ${notebook ? notebook.numero : 'N/A'}\n`;
-                    detalhes += `   👤 ${emp.colaborador} (${emp.setor})\n`;
-                    detalhes += `   🎫 Chamado: ${emp.chamado}\n`;
-                    detalhes += `   ⚠️ Status: ${isAtrasado ? 'ATRASADO' : 'NO PRAZO'}\n\n`;
-                });
-
-                alert(detalhes);
+                content.innerHTML = detalhes;
+                modal.classList.add('active');
             }
 
             formatDate(dateString) {
@@ -1857,8 +2033,8 @@
             formatDateTime(dateString) {
                 if (!dateString) return '-';
                 const date = new Date(dateString);
-                return date.toLocaleDateString('pt-BR') + ' às ' +
-                    date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                return date.toLocaleDateString('pt-BR') + ' às ' + 
+                       date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
             }
 
             isAtrasado(previsaoDevolucao) {
@@ -1872,8 +2048,7 @@
 
             showToast(message, type = 'success') {
                 console.log(`📢 ${type.toUpperCase()}: ${message}`);
-
-                // Remover toasts existentes
+                
                 document.querySelectorAll('.toast').forEach(toast => toast.remove());
 
                 const toast = document.createElement('div');
@@ -1889,35 +2064,31 @@
                     font-weight: 600;
                     z-index: 1001;
                     max-width: 300px;
-                    animation: slideIn 0.3s ease-out;
                 `;
-
+                
                 const colors = {
                     success: '#4CAF50',
                     error: '#F44336',
                     warning: '#FF9800',
                     info: '#2196F3'
                 };
-
+                
                 toast.style.backgroundColor = colors[type] || colors.success;
                 document.body.appendChild(toast);
-
+                
                 setTimeout(() => {
                     if (document.body.contains(toast)) {
-                        toast.style.animation = 'slideIn 0.3s ease-out reverse';
-                        setTimeout(() => {
-                            if (document.body.contains(toast)) {
-                                document.body.removeChild(toast);
-                            }
-                        }, 300);
+                        document.body.removeChild(toast);
                     }
                 }, 4000);
             }
         }
 
-        // Variável global
-        let sistema;
+        // Inicializar sistema quando DOM carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🌟 DOM carregado, inicializando sistema...');
+            window.sistema = new SistemaEmprestimos();
+        });
     </script>
 </body>
-
 </html>

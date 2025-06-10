@@ -1,164 +1,151 @@
-import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, get, set, remove } from 'firebase/database';
-
-const firebaseConfig = {
-  // MESMAS configurações do arquivo anterior
-  apiKey: process.env.FIREBASE_API_KEY || "AIzaSyA-MT3SU98q0RZhEMh1IEpmgEaGXZPpKAQ",
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN || "notebook-emprestimo.firebaseapp.com",
-  databaseURL: process.env.FIREBASE_DATABASE_URL || "https://notebook-emprestimo-default-rtdb.firebaseio.com",
-  projectId: process.env.FIREBASE_PROJECT_ID || "notebook-emprestimo",
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "notebook-emprestimo.firebasestorage.app",
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "1007063409338",
-  appId: process.env.FIREBASE_APP_ID || "1:1007063409338:web:5538614ffa1eaf315e5883"
-};
-
-let app;
-let database;
-
-try {
-  app = initializeApp(firebaseConfig);
-  database = getDatabase(app);
-} catch (error) {
-  console.error('❌ Erro Firebase:', error);
-}
-
-async function initializeDefaultSetores() {
-  if (!database) return;
-  
-  try {
-    const setoresRef = ref(database, 'setores');
-    const snapshot = await get(setoresRef);
-    
-    if (!snapshot.exists()) {
-      console.log('🔧 Inicializando setores padrão...');
-      
-      const defaultSetores = {
-        1: { id: 1, nome: 'Dados Mestre', ativo: true, data_criacao: new Date().toISOString() },
-        2: { id: 2, nome: 'Customer Service', ativo: true, data_criacao: new Date().toISOString() },
-        3: { id: 3, nome: 'T.I', ativo: true, data_criacao: new Date().toISOString() },
-        4: { id: 4, nome: 'CD VERA CRUZ', ativo: true, data_criacao: new Date().toISOString() },
-        5: { id: 5, nome: 'Suprimentos', ativo: true, data_criacao: new Date().toISOString() },
-        6: { id: 6, nome: 'ADM RH', ativo: true, data_criacao: new Date().toISOString() },
-        7: { id: 7, nome: 'Logística', ativo: true, data_criacao: new Date().toISOString() },
-        8: { id: 8, nome: 'Controladoria Fiscal', ativo: true, data_criacao: new Date().toISOString() }
-      };
-      
-      await set(setoresRef, defaultSetores);
-      console.log('✅ 8 setores padrão criados!');
-    }
-  } catch (error) {
-    console.error('❌ Erro ao inicializar setores:', error);
-  }
-}
-
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (!database) {
-    return res.status(500).json({ 
-      error: 'Firebase não conectado',
-      message: 'Verifique configurações do Firebase'
-    });
-  }
-
-  try {
-    await initializeDefaultSetores();
-
-    if (req.method === 'GET') {
-      const setoresRef = ref(database, 'setores');
-      const snapshot = await get(setoresRef);
-      
-      if (snapshot.exists()) {
-        const setores = Object.values(snapshot.val()).filter(setor => setor.ativo !== false);
-        return res.status(200).json(setores);
-      }
-      return res.status(200).json([]);
+// setores.js - Funcionalidades de setores
+class SetorManager {
+    constructor() {
+        this.setores = {};
+        this.init();
     }
 
-    if (req.method === 'POST') {
-      const { nome } = req.body;
-      
-      if (!nome || nome.trim().length < 2) {
-        return res.status(400).json({ error: 'Nome do setor é obrigatório (mínimo 2 caracteres)' });
-      }
-      
-      // Verificar se já existe
-      const setoresRef = ref(database, 'setores');
-      const snapshot = await get(setoresRef);
-      
-      if (snapshot.exists()) {
-        const setores = Object.values(snapshot.val());
-        const existe = setores.find(setor => 
-          setor.nome.toLowerCase() === nome.trim().toLowerCase() && setor.ativo !== false
+    init() {
+        this.setupRealtimeListeners();
+        this.setupEventListeners();
+    }
+
+    setupRealtimeListeners() {
+        dbRefs.setores.on('value', (snapshot) => {
+            if (snapshot.exists()) {
+                this.setores = snapshot.val();
+                this.updateSetorOptions();
+                this.renderSetores();
+                console.log('📡 Setores atualizados:', Object.keys(this.setores).length);
+            }
+        });
+    }
+
+    setupEventListeners() {
+        // Botão adicionar setor
+        const addBtn = document.getElementById('adicionarSetor');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => this.adicionarSetor());
+        }
+
+        // Enter no input
+        const input = document.getElementById('novoSetor');
+        if (input) {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.adicionarSetor();
+                }
+            });
+        }
+    }
+
+    async adicionarSetor() {
+        const input = document.getElementById('novoSetor');
+        if (!input) return;
+
+        const nomoSetor = input.value.trim();
+
+        if (!nomoSetor) {
+            this.showToast('Digite o nome do setor!', 'error');
+            return;
+        }
+
+        if (nomoSetor.length < 2) {
+            this.showToast('Nome do setor deve ter pelo menos 2 caracteres!', 'error');
+            return;
+        }
+
+        // Verificar se já existe
+        const existe = Object.values(this.setores).some(setor => 
+            setor.nome.toLowerCase() === nomoSetor.toLowerCase()
         );
-        
+
         if (existe) {
-          return res.status(400).json({ error: 'Setor já existe' });
+            this.showToast('Este setor já existe!', 'error');
+            return;
         }
-      }
-      
-      // Encontrar próximo ID
-      let nextId = 1;
-      if (snapshot.exists()) {
-        const setores = Object.values(snapshot.val());
-        nextId = Math.max(...setores.map(s => s.id)) + 1;
-      }
-      
-      const novoSetor = {
-        id: nextId,
-        nome: nome.trim(),
-        ativo: true,
-        data_criacao: new Date().toISOString()
-      };
-      
-      await set(ref(database, `setores/${nextId}`), novoSetor);
-      return res.status(201).json({ success: true, setor: novoSetor });
+
+        try {
+            const nextId = Math.max(...Object.keys(this.setores).map(k => parseInt(k))) + 1;
+            
+            const novoSetor = {
+                id: nextId,
+                nome: nomoSetor,
+                ativo: true,
+                data_criacao: FirebaseUtils.timestamp()
+            };
+
+            await dbRefs.setores.child(nextId).set(novoSetor);
+            
+            input.value = '';
+            this.showToast('✅ Setor adicionado com sucesso!', 'success');
+            
+        } catch (error) {
+            console.error('❌ Erro ao adicionar setor:', error);
+            this.showToast('❌ Erro ao adicionar setor', 'error');
+        }
     }
 
-    if (req.method === 'DELETE') {
-      const { nome, id } = req.body;
-      
-      if (!nome && !id) {
-        return res.status(400).json({ error: 'Nome ou ID do setor é obrigatório' });
-      }
-      
-      const setoresRef = ref(database, 'setores');
-      const snapshot = await get(setoresRef);
-      
-      if (snapshot.exists()) {
-        const setores = snapshot.val();
-        let setorKey;
-        
-        if (id) {
-          setorKey = id;
-        } else {
-          setorKey = Object.keys(setores).find(key => setores[key].nome === nome);
+    async removerSetor(id) {
+        if (!confirm('Tem certeza que deseja remover este setor?')) return;
+
+        try {
+            await dbRefs.setores.child(id).update({ ativo: false });
+            this.showToast('✅ Setor removido!', 'success');
+        } catch (error) {
+            console.error('❌ Erro ao remover setor:', error);
+            this.showToast('❌ Erro ao remover setor', 'error');
         }
-        
-        if (setorKey && setores[setorKey]) {
-          // Marcar como inativo ao invés de deletar
-          await set(ref(database, `setores/${setorKey}/ativo`), false);
-          return res.status(200).json({ success: true });
-        }
-      }
-      
-      return res.status(404).json({ error: 'Setor não encontrado' });
     }
 
-    return res.status(405).json({ error: 'Método não permitido' });
+    getSetoresAtivos() {
+        return Object.values(this.setores).filter(setor => setor.ativo !== false);
+    }
 
-  } catch (error) {
-    console.error('❌ Erro na API setores:', error);
-    return res.status(500).json({ 
-      error: 'Erro interno',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-  }
+    updateSetorOptions() {
+        // Atualizar selects de setores
+        const selects = ['setorColaborador', 'filtroSetor'];
+        
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            
+            const valorAtual = select.value;
+            const placeholder = selectId === 'filtroSetor' ? 'Todos os setores' : 'Selecione o setor';
+            
+            select.innerHTML = `<option value="">${placeholder}</option>`;
+            
+            this.getSetoresAtivos().forEach(setor => {
+                const option = document.createElement('option');
+                option.value = setor.nome;
+                option.textContent = setor.nome;
+                select.appendChild(option);
+            });
+            
+            select.value = valorAtual;
+        });
+    }
+
+    renderSetores() {
+        const container = document.getElementById('setoresList');
+        if (!container) return;
+
+        const setoresAtivos = this.getSetoresAtivos();
+
+        container.innerHTML = setoresAtivos.map(setor => `
+            <div class="setor-item">
+                <span>${setor.nome}</span>
+                <button class="btn-danger btn-small" onclick="setorManager.removerSetor(${setor.id})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    showToast(message, type = 'success') {
+        console.log(`${type.toUpperCase()}: ${message}`);
+    }
 }
+
+// Instanciar gerenciador
+const setorManager = new SetorManager();

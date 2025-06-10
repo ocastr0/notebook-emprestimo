@@ -1,18 +1,31 @@
+// script.js - Sistema principal integrado
 class SistemaEmprestimos {
     constructor() {
-        this.notebooks = [];
-        this.emprestimos = [];
-        this.setores = [];
-        this.baseURL = window.location.origin;
+        this.currentTab = 'dashboard';
         this.init();
     }
 
     async init() {
         this.setupEventListeners();
         this.setMinDate();
-        await this.loadAllData();
-        this.startAutoRefresh();
+        
+        // Aguardar carregamento dos gerenciadores
+        await this.waitForManagers();
+        
         this.showToast('🎉 Sistema carregado com Firebase!', 'success');
+        console.log('🚀 Sistema de Empréstimos iniciado!');
+    }
+
+    async waitForManagers() {
+        // Aguardar que todos os gerenciadores estejam prontos
+        let attempts = 0;
+        while (attempts < 50) {
+            if (window.notebookManager && window.emprestimoManager && window.setorManager && window.statsManager) {
+                break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
     }
 
     setupEventListeners() {
@@ -24,249 +37,78 @@ class SistemaEmprestimos {
             });
         });
 
-        // Formulário de empréstimo
+        // Teclas de atalho
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey) {
+                switch (e.key) {
+                    case '1':
+                        e.preventDefault();
+                        this.switchTab('dashboard');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        this.switchTab('solicitar');
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        this.switchTab('historico');
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        realtimeManager.forcSync();
+                        break;
+                    case 'b':
+                        e.preventDefault();
+                        statsManager.exportarDados();
+                        break;
+                }
+            }
+        });
+
+        // Auto-save do formulário
         const form = document.getElementById('formSolicitacao');
         if (form) {
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.criarSolicitacao();
-            });
+            form.addEventListener('input', this.debounce(() => {
+                this.saveFormData();
+            }, 1000));
         }
     }
 
-    async loadAllData() {
-        try {
-            await Promise.all([
-                this.loadNotebooks(),
-                this.loadEmprestimosAtivos(),
-                this.loadSetores(),
-                this.loadStats()
-            ]);
-            
-            this.renderDashboard();
-            this.updateNotebookOptions();
-            this.updateSetorOptions();
-        } catch (error) {
-            console.error('❌ Erro ao carregar dados:', error);
-            this.showToast('Erro ao carregar dados', 'error');
-        }
-    }
-
-    async loadNotebooks() {
-        try {
-            console.log('📡 Carregando notebooks...');
-            const response = await fetch(`${this.baseURL}/api/notebooks`);
-            this.notebooks = await response.json();
-            console.log('✅ Notebooks carregados:', this.notebooks.length);
-        } catch (error) {
-            console.error('❌ Erro ao carregar notebooks:', error);
-            this.notebooks = this.getDefaultNotebooks();
-        }
-    }
-
-    async loadEmprestimosAtivos() {
-        try {
-            const response = await fetch(`${this.baseURL}/api/emprestimos?action=ativos`);
-            this.emprestimosAtivos = await response.json();
-        } catch (error) {
-            console.error('❌ Erro ao carregar empréstimos:', error);
-            this.emprestimosAtivos = [];
-        }
-    }
-
-    async loadSetores() {
-        try {
-            const response = await fetch(`${this.baseURL}/api/setores`);
-            this.setores = await response.json();
-        } catch (error) {
-            console.error('❌ Erro ao carregar setores:', error);
-            this.setores = [];
-        }
-    }
-
-    async loadStats() {
-        try {
-            const response = await fetch(`${this.baseURL}/api/stats`);
-            const stats = await response.json();
-            
-            document.getElementById('disponiveisCount').textContent = stats.disponiveis;
-            document.getElementById('emprestadosCount').textContent = stats.em_uso;
-        } catch (error) {
-            console.error('❌ Erro ao carregar estatísticas:', error);
-        }
-    }
-
-    async criarSolicitacao() {
-        const nome = document.getElementById('nomeColaborador').value.trim();
-        const setor = document.getElementById('setorColaborador').value;
-        const notebookId = parseInt(document.getElementById('notebookSelecionado').value);
-        const chamado = document.getElementById('numeroChamado').value.trim();
-        const motivo = document.getElementById('motivoEmprestimo').value.trim();
-        const previsaoDevolucao = document.getElementById('dataPrevisaoDevolucao').value;
-
-        if (!nome || !setor || !notebookId || !chamado || !motivo || !previsaoDevolucao) {
-            this.showToast('Todos os campos são obrigatórios!', 'error');
-            return;
-        }
-
-        try {
-            this.showToast('📡 Criando empréstimo...', 'warning');
-            
-            const response = await fetch(`${this.baseURL}/api/emprestimos`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'criar',
-                    notebook_id: notebookId,
-                    colaborador: nome,
-                    setor: setor,
-                    chamado: chamado,
-                    motivo: motivo,
-                    previsao_devolucao: previsaoDevolucao
-                })
-            });
-
-            const result = await response.json();
-            
-            if (result.success) {
-                document.getElementById('formSolicitacao').reset();
-                this.setMinDate();
-                this.showToast('✅ Empréstimo criado com sucesso!', 'success');
-                this.switchTab('dashboard');
-                await this.loadAllData();
-            } else {
-                this.showToast('❌ Erro ao criar empréstimo', 'error');
-            }
-        } catch (error) {
-            console.error('❌ Erro:', error);
-            this.showToast('❌ Erro de conexão', 'error');
-        }
-    }
-
-    async devolverNotebook(notebookId) {
-        if (!confirm('Confirma a devolução deste notebook?')) return;
+    switchTab(tabName) {
+        this.currentTab = tabName;
         
-        const observacoes = prompt('Observações (opcional):') || '';
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+        const tabBtn = document.querySelector(`[data-tab="${tabName}"]`);
+        const tabContent = document.getElementById(tabName);
         
-        try {
-            this.showToast('📡 Processando devolução...', 'warning');
-            
-            const response = await fetch(`${this.baseURL}/api/emprestimos`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'devolver',
-                    notebook_id: notebookId,
-                    observacoes: observacoes
-                })
-            });
+        if (tabBtn) tabBtn.classList.add('active');
+        if (tabContent) tabContent.classList.add('active');
 
-            const result = await response.json();
-            
-            if (result.success) {
-                this.showToast('✅ Notebook devolvido com sucesso!', 'success');
-                await this.loadAllData();
-            } else {
-                this.showToast('❌ Erro ao devolver notebook', 'error');
-            }
-        } catch (error) {
-            console.error('❌ Erro:', error);
-            this.showToast('❌ Erro de conexão', 'error');
-        }
-    }
-
-    renderDashboard() {
-        // Renderizar notebooks
-        const container = document.getElementById('notebooksContainer');
-        if (!container) return;
-
-        if (this.notebooks.length === 0) {
-            container.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Carregando notebooks...</p></div>';
-            return;
-        }
-
-        container.innerHTML = this.notebooks.map(notebook => {
-            const isAtrasado = notebook.status === 'emprestado' && this.isAtrasado(notebook.previsao_devolucao);
-            
-            return `
-                <div class="notebook-card ${notebook.status}">
-                    <div class="notebook-icon">
-                        <i class="fas fa-laptop"></i>
-                    </div>
-                    <div class="notebook-number">${notebook.numero}</div>
-                    <div class="notebook-status status-${notebook.status}">
-                        ${notebook.status === 'disponivel' ? 'Disponível' : 'Em Uso'}
-                        ${isAtrasado ? ' (Atrasado)' : ''}
-                    </div>
-                    ${notebook.status === 'emprestado' ? `
-                        <div class="notebook-info">
-                            <strong>${notebook.colaborador}</strong><br>
-                            <span style="color: var(--light-orange);">${notebook.setor}</span><br>
-                            <small>Chamado: ${notebook.chamado}</small><br>
-                            <small>Devolução: ${this.formatDate(notebook.previsao_devolucao)}</small>
-                        </div>
-                    ` : '<div class="notebook-info">Pronto para empréstimo</div>'}
-                    <div class="notebook-actions">
-                        ${notebook.status === 'emprestado' ? `
-                            <button class="btn-danger btn-small" onclick="sistema.devolverNotebook(${notebook.id})">
-                                <i class="fas fa-undo"></i> Devolver
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        // Renderizar empréstimos ativos
-        const emprestimosContainer = document.getElementById('emprestimosAtivos');
-        if (!emprestimosContainer) return;
-
-        if (!this.emprestimosAtivos || this.emprestimosAtivos.length === 0) {
-            emprestimosContainer.innerHTML = `
-                <div style="text-align: center; padding: 40px; opacity: 0.7;">
-                    <i class="fas fa-clipboard-list" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
-                    <p>Nenhum empréstimo ativo</p>
-                </div>
-            `;
-        } else {
-            emprestimosContainer.innerHTML = this.emprestimosAtivos.map(emprestimo => {
-                const previsao = new Date(emprestimo.previsao_devolucao);
-                const hoje = new Date();
-                const isAtrasado = previsao < hoje;
-                const diasRestantes = Math.ceil((previsao - hoje) / (1000 * 60 * 60 * 24));
-                
-                return `
-                    <div class="emprestimo-item">
-                        <div class="emprestimo-header">
-                            <span class="emprestimo-notebook">${emprestimo.notebook_numero}</span>
-                            <span class="emprestimo-status ${isAtrasado ? 'status-atrasado' : 'status-ativo'}">
-                                ${isAtrasado ? `Atrasado (${Math.abs(diasRestantes)} dias)` : 
-                                  diasRestantes === 0 ? 'Vence Hoje' :
-                                  diasRestantes === 1 ? 'Vence Amanhã' :
-                                  `${diasRestantes} dias restantes`}
-                            </span>
-                        </div>
-                        <div class="emprestimo-info">
-                            <div><strong>Colaborador</strong><span>${emprestimo.colaborador}</span></div>
-                            <div><strong>Setor</strong><span>${emprestimo.setor}</span></div>
-                            <div><strong>Chamado</strong><span>${emprestimo.chamado}</span></div>
-                            <div><strong>Devolução</strong><span>${this.formatDate(emprestimo.previsao_devolucao)}</span></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+        // Ações específicas por tab
+        switch (tabName) {
+            case 'dashboard':
+                this.updateNotebookOptions();
+                break;
+            case 'solicitar':
+                this.updateNotebookOptions();
+                this.loadFormData();
+                break;
+            case 'historico':
+                this.renderHistoricoCompleto();
+                break;
+            case 'setores':
+                setorManager.renderSetores();
+                break;
         }
     }
 
     updateNotebookOptions() {
         const select = document.getElementById('notebookSelecionado');
-        if (!select) return;
+        if (!select || !notebookManager) return;
 
-        const notebooksDisponiveis = this.notebooks.filter(nb => nb.status === 'disponivel');
+        const notebooksDisponiveis = notebookManager.getNotebooksDisponiveis();
         
         select.innerHTML = '<option value="">Selecione um notebook disponível</option>';
         
@@ -284,25 +126,11 @@ class SistemaEmprestimos {
         }
     }
 
-    updateSetorOptions() {
-        const select = document.getElementById('setorColaborador');
-        if (!select) return;
-
-        select.innerHTML = '<option value="">Selecione o setor</option>';
-        this.setores.forEach(setor => {
-            const option = document.createElement('option');
-            option.value = setor.nome;
-            option.textContent = setor.nome;
-            select.appendChild(option);
-        });
-    }
-
-    switchTab(tabName) {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-        document.getElementById(tabName).classList.add('active');
+    renderHistoricoCompleto() {
+        // Implementar renderização completa do histórico
+        if (emprestimoManager) {
+            emprestimoManager.renderHistorico();
+        }
     }
 
     setMinDate() {
@@ -317,39 +145,56 @@ class SistemaEmprestimos {
         }
     }
 
-    startAutoRefresh() {
-        // Atualiza dados a cada 30 segundos
-        setInterval(async () => {
-            await this.loadAllData();
-        }, 30000);
+    saveFormData() {
+        const formData = {
+            nome: document.getElementById('nomeColaborador')?.value || '',
+            setor: document.getElementById('setorColaborador')?.value || '',
+            chamado: document.getElementById('numeroChamado')?.value || '',
+            motivo: document.getElementById('motivoEmprestimo')?.value || '',
+            timestamp: Date.now()
+        };
+        
+        localStorage.setItem('formDraft', JSON.stringify(formData));
     }
 
-    getDefaultNotebooks() {
-        const notebooks = [];
-        for (let i = 1; i <= 15; i++) {
-            notebooks.push({
-                id: i,
-                numero: `EMPRESTIMO_${i.toString().padStart(2, '0')}`,
-                serie: `${Math.floor(Math.random() * 9000) + 1000}DD3`,
-                rfid: `RF${200794 + i}`,
-                status: 'disponivel'
-            });
+    loadFormData() {
+        const saved = localStorage.getItem('formDraft');
+        if (!saved) return;
+        
+        try {
+            const formData = JSON.parse(saved);
+            
+            // Só carregar se foi salvo nas últimas 24 horas
+            if (Date.now() - formData.timestamp < 86400000) {
+                const campos = {
+                    'nomeColaborador': formData.nome,
+                    'setorColaborador': formData.setor,
+                    'numeroChamado': formData.chamado,
+                    'motivoEmprestimo': formData.motivo
+                };
+                
+                Object.entries(campos).forEach(([id, valor]) => {
+                    const input = document.getElementById(id);
+                    if (input && valor) {
+                        input.value = valor;
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao carregar dados salvos:', error);
         }
-        return notebooks;
     }
 
-    isAtrasado(previsaoDevolucao) {
-        if (!previsaoDevolucao) return false;
-        const previsao = new Date(previsaoDevolucao);
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-        previsao.setHours(0, 0, 0, 0);
-        return previsao < hoje;
-    }
-
-    formatDate(dateString) {
-        if (!dateString) return '-';
-        return new Date(dateString).toLocaleDateString('pt-BR');
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
 
     showToast(message, type = 'success') {
@@ -358,6 +203,28 @@ class SistemaEmprestimos {
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 1001;
+            animation: toastSlideIn 0.3s ease-out;
+        `;
+        
+        // Cores baseadas no tipo
+        const colors = {
+            success: '#4CAF50',
+            error: '#F44336',
+            warning: '#FFC107',
+            info: '#2196F3'
+        };
+        
+        toast.style.background = colors[type] || colors.success;
+        if (type === 'warning') toast.style.color = '#000';
         
         document.body.appendChild(toast);
         
@@ -368,11 +235,11 @@ class SistemaEmprestimos {
                     document.body.removeChild(toast);
                 }
             }, 300);
-        }, 3000);
+        }, 4000);
     }
 }
 
-// Inicializar sistema
+// Inicializar sistema quando documento carregar
 let sistema;
 document.addEventListener('DOMContentLoaded', function() {
     sistema = new SistemaEmprestimos();

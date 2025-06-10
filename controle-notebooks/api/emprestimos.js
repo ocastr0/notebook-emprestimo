@@ -1,276 +1,221 @@
-import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, get, set, update, query, orderByChild, equalTo } from 'firebase/database';
+// emprestimos.js - Funcionalidades de empréstimos
+class EmprestimoManager {
+    constructor() {
+        this.emprestimos = {};
+        this.init();
+    }
 
-const firebaseConfig = {
-  // MESMAS configurações do arquivo anterior
-  apiKey: process.env.FIREBASE_API_KEY || "AIzaSyA-MT3SU98q0RZhEMh1IEpmgEaGXZPpKAQ",
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN || "notebook-emprestimo.firebaseapp.com",
-  databaseURL: process.env.FIREBASE_DATABASE_URL || "https://notebook-emprestimo-default-rtdb.firebaseio.com",
-  projectId: process.env.FIREBASE_PROJECT_ID || "notebook-emprestimo",
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "notebook-emprestimo.firebasestorage.app",
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "1007063409338",
-  appId: process.env.FIREBASE_APP_ID || "1:1007063409338:web:5538614ffa1eaf315e5883"
-};
+    init() {
+        this.setupRealtimeListeners();
+        this.setupFormListener();
+    }
 
-let app;
-let database;
+    setupRealtimeListeners() {
+        // Listener para empréstimos
+        dbRefs.emprestimos.on('value', (snapshot) => {
+            if (snapshot.exists()) {
+                this.emprestimos = snapshot.val();
+                this.renderEmprestimosAtivos();
+                this.renderHistorico();
+                console.log('📡 Empréstimos atualizados:', Object.keys(this.emprestimos).length);
+            }
+        });
+    }
 
-try {
-  app = initializeApp(firebaseConfig);
-  database = getDatabase(app);
-} catch (error) {
-  console.error('❌ Erro Firebase:', error);
-}
-
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (!database) {
-    return res.status(500).json({ 
-      error: 'Firebase não conectado',
-      message: 'Verifique configurações do Firebase'
-    });
-  }
-
-  try {
-    if (req.method === 'GET') {
-      const { action, id, nome, setor, mes } = req.query;
-      
-      if (action === 'ativos') {
-        // Buscar empréstimos ativos
-        const emprestimosRef = ref(database, 'emprestimos');
-        const snapshot = await get(emprestimosRef);
-        
-        if (snapshot.exists()) {
-          const emprestimos = Object.values(snapshot.val()).filter(emp => emp.status === 'ativo');
-          
-          // Buscar dados dos notebooks para cada empréstimo
-          const emprestimosComNotebooks = await Promise.all(
-            emprestimos.map(async (emprestimo) => {
-              try {
-                const notebookRef = ref(database, `notebooks/${emprestimo.notebook_id}`);
-                const notebookSnapshot = await get(notebookRef);
-                
-                if (notebookSnapshot.exists()) {
-                  return {
-                    ...emprestimo,
-                    notebook_numero: notebookSnapshot.val().numero
-                  };
-                }
-                return {
-                  ...emprestimo,
-                  notebook_numero: `Notebook ${emprestimo.notebook_id}`
-                };
-              } catch (error) {
-                console.error('Erro ao buscar notebook:', error);
-                return {
-                  ...emprestimo,
-                  notebook_numero: `Notebook ${emprestimo.notebook_id}`
-                };
-              }
-            })
-          );
-          
-          return res.status(200).json(emprestimosComNotebooks);
+    setupFormListener() {
+        const form = document.getElementById('formSolicitacao');
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.criarEmprestimo();
+            });
         }
-        return res.status(200).json([]);
-      }
-      
-      if (action === 'historico') {
-        // Buscar histórico com filtros
-        const emprestimosRef = ref(database, 'emprestimos');
-        const snapshot = await get(emprestimosRef);
+    }
+
+    async criarEmprestimo() {
+        const nome = document.getElementById('nomeColaborador')?.value.trim();
+        const setor = document.getElementById('setorColaborador')?.value;
+        const notebookId = parseInt(document.getElementById('notebookSelecionado')?.value);
+        const chamado = document.getElementById('numeroChamado')?.value.trim();
+        const motivo = document.getElementById('motivoEmprestimo')?.value.trim();
+        const previsaoDevolucao = document.getElementById('dataPrevisaoDevolucao')?.value;
+
+        // Validações
+        if (!nome || !setor || !notebookId || !chamado || !motivo || !previsaoDevolucao) {
+            this.showToast('Todos os campos são obrigatórios!', 'error');
+            return;
+        }
+
+        if (nome.length < 2) {
+            this.showToast('Nome deve ter pelo menos 2 caracteres!', 'error');
+            return;
+        }
+
+        const notebook = notebookManager.getNotebookById(notebookId);
+        if (!notebook || notebook.status !== 'disponivel') {
+            this.showToast('Notebook não está disponível!', 'error');
+            return;
+        }
+
+        try {
+            const emprestimoId = FirebaseUtils.generateId();
+            const agora = new Date().toISOString();
+            
+            const emprestimo = {
+                id: emprestimoId,
+                notebook_id: notebookId,
+                colaborador: nome,
+                setor: setor,
+                chamado: chamado,
+                motivo: motivo,
+                data_entrega: agora,
+                previsao_devolucao: previsaoDevolucao,
+                status: 'ativo',
+                data_criacao: FirebaseUtils.timestamp()
+            };
+
+            // Usar transação para garantir consistência
+            const updates = {};
+            updates[`emprestimos/${emprestimoId}`] = emprestimo;
+            updates[`notebooks/${notebookId}/status`] = 'emprestado';
+            updates[`notebooks/${notebookId}/colaborador`] = nome;
+            updates[`notebooks/${notebookId}/setor`] = setor;
+            updates[`notebooks/${notebookId}/chamado`] = chamado;
+            updates[`notebooks/${notebookId}/data_entrega`] = agora;
+            updates[`notebooks/${notebookId}/previsao_devolucao`] = previsaoDevolucao;
+
+            await database.ref().update(updates);
+            
+            // Limpar formulário
+            const form = document.getElementById('formSolicitacao');
+            if (form) form.reset();
+            
+            this.showToast(`✅ Notebook ${notebook.numero} emprestado para ${nome}!`, 'success');
+            
+            // Mudar para aba dashboard
+            if (typeof sistema !== 'undefined') {
+                sistema.switchTab('dashboard');
+            }
+            
+        } catch (error) {
+            console.error('❌ Erro ao criar empréstimo:', error);
+            this.showToast('❌ Erro ao processar empréstimo', 'error');
+        }
+    }
+
+    async devolverNotebook(notebookId) {
+        if (!confirm('Confirma a devolução deste notebook?')) return;
         
-        if (snapshot.exists()) {
-          let emprestimos = Object.values(snapshot.val());
-          
-          // Aplicar filtros
-          if (nome) {
-            emprestimos = emprestimos.filter(emp => 
-              emp.colaborador.toLowerCase().includes(nome.toLowerCase())
+        const observacoes = prompt('Observações sobre a devolução (opcional):') || '';
+        
+        try {
+            // Encontrar empréstimo ativo
+            const emprestimoAtivo = Object.values(this.emprestimos).find(emp => 
+                emp.notebook_id === notebookId && emp.status === 'ativo'
             );
-          }
-          
-          if (setor) {
-            emprestimos = emprestimos.filter(emp => emp.setor === setor);
-          }
-          
-          if (mes) {
-            emprestimos = emprestimos.filter(emp => {
-              const dataEntrega = new Date(emp.data_entrega);
-              const mesAno = `${dataEntrega.getFullYear()}-${(dataEntrega.getMonth() + 1).toString().padStart(2, '0')}`;
-              return mesAno === mes;
-            });
-          }
-          
-          // Buscar dados dos notebooks
-          const emprestimosComNotebooks = await Promise.all(
-            emprestimos.map(async (emprestimo) => {
-              try {
-                const notebookRef = ref(database, `notebooks/${emprestimo.notebook_id}`);
-                const notebookSnapshot = await get(notebookRef);
+            
+            if (!emprestimoAtivo) {
+                this.showToast('❌ Empréstimo ativo não encontrado', 'error');
+                return;
+            }
+
+            const agora = new Date().toISOString();
+            
+            // Atualizar em uma transação
+            const updates = {};
+            updates[`emprestimos/${emprestimoAtivo.id}/status`] = 'devolvido';
+            updates[`emprestimos/${emprestimoAtivo.id}/data_devolucao`] = agora;
+            updates[`emprestimos/${emprestimoAtivo.id}/observacoes_devolucao`] = observacoes;
+            updates[`notebooks/${notebookId}/status`] = 'disponivel';
+            updates[`notebooks/${notebookId}/colaborador`] = null;
+            updates[`notebooks/${notebookId}/setor`] = null;
+            updates[`notebooks/${notebookId}/chamado`] = null;
+            updates[`notebooks/${notebookId}/data_entrega`] = null;
+            updates[`notebooks/${notebookId}/previsao_devolucao`] = null;
+
+            await database.ref().update(updates);
+            
+            this.showToast('✅ Notebook devolvido com sucesso!', 'success');
+            
+        } catch (error) {
+            console.error('❌ Erro ao devolver notebook:', error);
+            this.showToast('❌ Erro ao devolver notebook', 'error');
+        }
+    }
+
+    getEmprestimosAtivos() {
+        return Object.values(this.emprestimos).filter(emp => emp.status === 'ativo');
+    }
+
+    renderEmprestimosAtivos() {
+        const container = document.getElementById('emprestimosAtivos');
+        if (!container) return;
+
+        const ativos = this.getEmprestimosAtivos();
+        
+        if (ativos.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; opacity: 0.7;">
+                    <i class="fas fa-clipboard-list" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
+                    <p>Nenhum empréstimo ativo</p>
+                </div>
+            `;
+        } else {
+            container.innerHTML = ativos.map(emprestimo => {
+                const notebook = notebookManager.getNotebookById(emprestimo.notebook_id);
+                const previsao = new Date(emprestimo.previsao_devolucao);
+                const hoje = new Date();
+                const isAtrasado = previsao < hoje;
+                const diasRestantes = Math.ceil((previsao - hoje) / (1000 * 60 * 60 * 24));
                 
-                if (notebookSnapshot.exists()) {
-                  return {
-                    ...emprestimo,
-                    notebook_numero: notebookSnapshot.val().numero
-                  };
-                }
-                return {
-                  ...emprestimo,
-                  notebook_numero: `Notebook ${emprestimo.notebook_id}`
-                };
-              } catch (error) {
-                return {
-                  ...emprestimo,
-                  notebook_numero: `Notebook ${emprestimo.notebook_id}`
-                };
-              }
-            })
-          );
-          
-          // Ordenar por data mais recente
-          emprestimosComNotebooks.sort((a, b) => new Date(b.data_entrega) - new Date(a.data_entrega));
-          
-          return res.status(200).json(emprestimosComNotebooks);
+                return `
+                    <div class="emprestimo-item" onclick="emprestimoManager.mostrarDetalhes(${emprestimo.id})">
+                        <div class="emprestimo-header">
+                            <span class="emprestimo-notebook">${notebook ? notebook.numero : 'N/A'}</span>
+                            <span class="emprestimo-status ${isAtrasado ? 'status-atrasado' : 'status-ativo'}">
+                                ${isAtrasado ? `Atrasado (${Math.abs(diasRestantes)} dias)` : 
+                                  diasRestantes === 0 ? 'Vence Hoje' :
+                                  diasRestantes === 1 ? 'Vence Amanhã' :
+                                  `${diasRestantes} dias restantes`}
+                            </span>
+                        </div>
+                        <div class="emprestimo-info">
+                            <div><strong>Colaborador</strong><span>${emprestimo.colaborador}</span></div>
+                            <div><strong>Setor</strong><span>${emprestimo.setor}</span></div>
+                            <div><strong>Chamado</strong><span>${emprestimo.chamado}</span></div>
+                            <div><strong>Devolução</strong><span>${FirebaseUtils.formatDate(emprestimo.previsao_devolucao)}</span></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
-        return res.status(200).json([]);
-      }
-      
-      if (id) {
-        // Buscar empréstimo específico
-        const emprestimoRef = ref(database, `emprestimos/${id}`);
-        const snapshot = await get(emprestimoRef);
-        
-        if (snapshot.exists()) {
-          const emprestimo = snapshot.val();
-          
-          // Buscar dados do notebook
-          const notebookRef = ref(database, `notebooks/${emprestimo.notebook_id}`);
-          const notebookSnapshot = await get(notebookRef);
-          
-          if (notebookSnapshot.exists()) {
-            emprestimo.notebook_numero = notebookSnapshot.val().numero;
-          }
-          
-          return res.status(200).json(emprestimo);
-        }
-        return res.status(404).json({ error: 'Empréstimo não encontrado' });
-      }
     }
 
-    if (req.method === 'POST') {
-      const data = req.body;
-      
-      if (data.action === 'criar') {
-        // Criar novo empréstimo
-        const emprestimoId = Date.now();
-        const agora = new Date().toISOString();
-        
-        const emprestimo = {
-          id: emprestimoId,
-          notebook_id: data.notebook_id,
-          colaborador: data.colaborador,
-          setor: data.setor,
-          chamado: data.chamado,
-          motivo: data.motivo,
-          data_entrega: agora,
-          previsao_devolucao: data.previsao_devolucao,
-          data_devolucao: null,
-          observacoes_devolucao: null,
-          status: 'ativo',
-          data_criacao: agora,
-          data_atualizacao: agora
-        };
-        
-        // Verificar se notebook existe e está disponível
-        const notebookRef = ref(database, `notebooks/${data.notebook_id}`);
-        const notebookSnapshot = await get(notebookRef);
-        
-        if (!notebookSnapshot.exists()) {
-          return res.status(404).json({ error: 'Notebook não encontrado' });
-        }
-        
-        const notebook = notebookSnapshot.val();
-        if (notebook.status !== 'disponivel') {
-          return res.status(400).json({ error: 'Notebook não está disponível' });
-        }
-        
-        // Salvar empréstimo
-        await set(ref(database, `emprestimos/${emprestimoId}`), emprestimo);
-        
-        // Atualizar status do notebook
-        const updateNotebook = {
-          status: 'emprestado',
-          colaborador: data.colaborador,
-          setor: data.setor,
-          chamado: data.chamado,
-          data_entrega: agora,
-          previsao_devolucao: data.previsao_devolucao,
-          data_atualizacao: agora
-        };
-        
-        await update(ref(database, `notebooks/${data.notebook_id}`), updateNotebook);
-        
-        return res.status(201).json({ success: true, id: emprestimoId });
-      }
-      
-      if (data.action === 'devolver') {
-        // Devolver notebook
-        const agora = new Date().toISOString();
-        
-        // Buscar empréstimo ativo do notebook
-        const emprestimosRef = ref(database, 'emprestimos');
-        const snapshot = await get(emprestimosRef);
-        
-        if (snapshot.exists()) {
-          const emprestimos = Object.values(snapshot.val());
-          const emprestimo = emprestimos.find(emp => 
-            emp.notebook_id === data.notebook_id && emp.status === 'ativo'
-          );
-          
-          if (emprestimo) {
-            // Atualizar empréstimo
-            await update(ref(database, `emprestimos/${emprestimo.id}`), {
-              status: 'devolvido',
-              data_devolucao: agora,
-              observacoes_devolucao: data.observacoes || '',
-              data_atualizacao: agora
-            });
-            
-            // Atualizar notebook
-            await update(ref(database, `notebooks/${data.notebook_id}`), {
-              status: 'disponivel',
-              colaborador: null,
-              setor: null,
-              chamado: null,
-              data_entrega: null,
-              previsao_devolucao: null,
-              data_atualizacao: agora
-            });
-            
-            return res.status(200).json({ success: true });
-          }
-          return res.status(404).json({ error: 'Empréstimo ativo não encontrado' });
-        }
-        return res.status(404).json({ error: 'Nenhum empréstimo encontrado' });
-      }
+    renderHistorico() {
+        // Implementar renderização do histórico
+        console.log('📊 Renderizando histórico...');
     }
 
-    return res.status(405).json({ error: 'Método não permitido' });
+    mostrarDetalhes(id) {
+        const emprestimo = this.emprestimos[id];
+        if (!emprestimo) return;
+        
+        const notebook = notebookManager.getNotebookById(emprestimo.notebook_id);
+        
+        alert(`
+Empréstimo: ${notebook ? notebook.numero : 'N/A'}
+Colaborador: ${emprestimo.colaborador}
+Setor: ${emprestimo.setor}
+Chamado: ${emprestimo.chamado}
+Data Entrega: ${FirebaseUtils.formatDate(emprestimo.data_entrega)}
+Previsão Devolução: ${FirebaseUtils.formatDate(emprestimo.previsao_devolucao)}
+        `);
+    }
 
-  } catch (error) {
-    console.error('❌ Erro na API empréstimos:', error);
-    return res.status(500).json({ 
-      error: 'Erro interno',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-  }
+    showToast(message, type = 'success') {
+        console.log(`${type.toUpperCase()}: ${message}`);
+    }
 }
+
+// Instanciar gerenciador
+const emprestimoManager = new EmprestimoManager();

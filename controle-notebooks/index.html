@@ -1478,113 +1478,81 @@
 
             // IMPLEMENTAÇÃO DO MODAL DE DEVOLUÇÃO
             abrirModalDevolucao(notebookId) {
-                console.log('🔄 Abrindo modal de devolução para notebook:', notebookId);
-                
-                const notebook = this.notebooks.find(nb => nb.id === notebookId);
-                if (!notebook || notebook.status !== 'emprestado') {
-                    this.showToast('❌ Notebook não encontrado ou não está emprestado!', 'error');
-                    return;
-                }
+        console.log('🔄 Abrindo modal de devolução para notebook ID:', notebookId);
+        
+        const notebook = this.notebooks.find(nb => nb.id === notebookId);
+        if (!notebook || notebook.status !== 'emprestado') {
+            this.showToast('❌ Notebook não encontrado ou não está emprestado!', 'error');
+            return;
+        }
 
-                const emprestimo = this.emprestimos.find(emp => 
-                    emp.notebookId === notebookId && emp.status === 'ativo'
-                );
-                
-                if (!emprestimo) {
-                    this.showToast('❌ Empréstimo não encontrado!', 'error');
-                    return;
-                }
+        const emprestimo = this.emprestimos.find(emp => 
+            emp.notebookId === notebookId && emp.status === 'ativo'
+        );
 
-                // Preencher informações
-                const infoDiv = document.getElementById('infoDevolucao');
-                if (infoDiv) {
-                    const diasEmprestado = Math.floor((new Date() - new Date(emprestimo.dataEntrega)) / (1000 * 60 * 60 * 24));
-                    const isAtrasado = this.isAtrasado(notebook.previsaoDevolucao);
-                    const diasAtraso = isAtrasado ? Math.floor((new Date() - new Date(notebook.previsaoDevolucao)) / (1000 * 60 * 60 * 24)) : 0;
+        if (!emprestimo) {
+            this.showToast('❌ Empréstimo ativo não encontrado!', 'error');
+            return;
+        }
 
-                    infoDiv.innerHTML = `
-                        <div style="background: var(--dark-gray); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--primary-orange);">
-                            <h3 style="color: var(--primary-orange); margin-bottom: 15px;">
-                                <i class="fas fa-laptop"></i> ${notebook.numero}
-                            </h3>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                                <div><strong style="color: var(--light-orange);">Colaborador:</strong><br>${notebook.colaborador}</div>
-                                <div><strong style="color: var(--light-orange);">Setor:</strong><br>${notebook.setor}</div>
-                                <div><strong style="color: var(--light-orange);">Chamado:</strong><br>${notebook.chamado}</div>
-                                <div><strong style="color: var(--light-orange);">Tempo Emprestado:</strong><br>${diasEmprestado} dia(s)</div>
-                            </div>
-                            ${isAtrasado ? `
-                                <div style="background: rgba(244, 67, 54, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #F44336;">
-                                    <strong style="color: #F44336;"><i class="fas fa-exclamation-triangle"></i> ATRASADO</strong><br>
-                                    <span style="color: #ffcdd2;">${diasAtraso} dia(s) em atraso</span>
-                                </div>
-                            ` : `
-                                <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #4CAF50;">
-                                    <strong style="color: #4CAF50;"><i class="fas fa-check-circle"></i> NO PRAZO</strong>
-                                </div>
-                            `}
+        // Criar modal se não existir
+        let modal = document.getElementById('modalDevolucao');
+        if (!modal) {
+            modal = this.criarModalDevolucao();
+        }
+
+        // Preencher informações
+        const infoDiv = modal.querySelector('#infoDevolucao');
+        if (infoDiv) {
+            const diasEmprestado = Math.floor((new Date() - new Date(emprestimo.dataEntrega)) / (1000 * 60 * 60 * 24));
+            const isAtrasado = this.isAtrasado(notebook.previsaoDevolucao);
+            const diasAtraso = isAtrasado ? Math.floor((new Date() - new Date(notebook.previsaoDevolucao)) / (1000 * 60 * 60 * 24)) : 0;
+
+            infoDiv.innerHTML = `
+                <div style="background: var(--dark-gray); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--primary-orange);">
+                    <h3 style="color: var(--primary-orange); margin-bottom: 15px;">
+                        <i class="fas fa-laptop"></i> ${notebook.numero}
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div><strong style="color: var(--light-orange);">Colaborador:</strong><br>${notebook.colaborador}</div>
+                        <div><strong style="color: var(--light-orange);">Setor:</strong><br>${notebook.setor}</div>
+                        <div><strong style="color: var(--light-orange);">Chamado:</strong><br>${notebook.chamado}</div>
+                        <div><strong style="color: var(--light-orange);">Tempo Emprestado:</strong><br>${diasEmprestado} dia(s)</div>
+                    </div>
+                    ${isAtrasado ? `
+                        <div style="background: rgba(244, 67, 54, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #F44336;">
+                            <strong style="color: #F44336;"><i class="fas fa-exclamation-triangle"></i> ATRASADO</strong><br>
+                            <span style="color: #ffcdd2;">${diasAtraso} dia(s) em atraso</span>
                         </div>
-                    `;
-                }
-                
-                // Limpar observações
-                const observacoes = document.getElementById('observacoesDevolucao');
-                if (observacoes) observacoes.value = '';
-                
-                // Armazenar dados no modal
-                const modal = document.getElementById('modalDevolucao');
-                modal.setAttribute('data-notebook-id', notebookId);
-                modal.setAttribute('data-emprestimo-id', emprestimo.id);
-                
-                // Mostrar modal
-                modal.classList.add('active');
-            }
-
-            async confirmarDevolucao() {
-                console.log('💾 Confirmando devolução...');
-                
-                const modal = document.getElementById('modalDevolucao');
-                const notebookId = parseInt(modal.getAttribute('data-notebook-id'));
-                const emprestimoId = parseInt(modal.getAttribute('data-emprestimo-id'));
-                const observacoes = document.getElementById('observacoesDevolucao').value.trim();
-                
-                const notebook = this.notebooks.find(nb => nb.id === notebookId);
-                const emprestimo = this.emprestimos.find(emp => emp.id === emprestimoId);
-                
-                if (!notebook || !emprestimo) {
-                    this.showToast('❌ Erro ao localizar dados!', 'error');
-                    return;
-                }
-                
-                try {
-                    const agora = new Date().toISOString();
-                    
-                    // Atualizar notebook
-                    notebook.status = 'disponivel';
-                    notebook.colaborador = null;
-                    notebook.setor = null;
-                    notebook.chamado = null;
-                    notebook.dataEntrega = null;
-                    notebook.previsaoDevolucao = null;
-                    
-                    // Atualizar empréstimo
-                    emprestimo.status = 'devolvido';
-                    emprestimo.dataDevolucao = agora;
-                    emprestimo.observacoesDevolucao = observacoes;
-                    
-                    // Salvar e atualizar
-                    await this.saveToFirebase();
-                    this.saveToCache();
-                    this.fecharModal();
-                    this.renderAll();
-                    
-                    this.showToast(`✅ Notebook ${notebook.numero} devolvido com sucesso!`, 'success');
-                    
-                } catch (error) {
-                    console.error('❌ Erro ao confirmar devolução:', error);
-                    this.showToast('❌ Erro ao processar devolução', 'error');
-                }
-            }
+                    ` : `
+                        <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #4CAF50;">
+                            <strong style="color: #4CAF50;"><i class="fas fa-check-circle"></i> NO PRAZO</strong>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+        
+        // Limpar observações
+        const observacoes = modal.querySelector('#observacoesDevolucao');
+        if (observacoes) {
+            observacoes.value = '';
+        }
+        
+        // Armazenar dados no modal
+        modal.setAttribute('data-notebook-id', notebookId);
+        modal.setAttribute('data-emprestimo-id', emprestimo.id);
+        
+        // Mostrar modal
+        modal.classList.add('active');
+        
+        // Configurar listener do botão confirmar
+        setTimeout(() => {
+            this.setupModalDevolucaoListener();
+        }, 100);
+        
+        console.log('✅ Modal de devolução aberto para:', notebook.numero);
+    }
 
             fecharModal() {
                 document.querySelectorAll('.modal').forEach(modal => {

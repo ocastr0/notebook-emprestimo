@@ -1926,38 +1926,39 @@ class SistemaEmprestimos {
         return container;
     }
 
-    setupGestaoNotebooksListeners() {
-        console.log('🔧 Configurando listeners da gestão de notebooks...');
-        
-        // Botões editar
-        document.querySelectorAll('.editar-notebook-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const notebookId = parseInt(btn.getAttribute('data-notebook-id'));
-                this.editarNotebook(notebookId);
-            });
+    ssetupGestaoNotebooksListeners() {
+    console.log('🔧 Configurando listeners da gestão de notebooks...');
+    
+    // Botões editar - CORRIGIDO
+    document.querySelectorAll('.editar-notebook-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const notebookId = parseInt(btn.getAttribute('data-notebook-id'));
+            this.editarNotebook(notebookId); // Agora chama a função completa
         });
+    });
 
-        // Botões duplicar
-        document.querySelectorAll('.duplicar-notebook-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const notebookId = parseInt(btn.getAttribute('data-notebook-id'));
-                this.duplicarNotebook(notebookId);
-            });
+    // Botões duplicar
+    document.querySelectorAll('.duplicar-notebook-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const notebookId = parseInt(btn.getAttribute('data-notebook-id'));
+            this.duplicarNotebook(notebookId);
         });
+    });
 
-        // Botões excluir
-        document.querySelectorAll('.excluir-notebook-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const notebookId = parseInt(btn.getAttribute('data-notebook-id'));
-                this.excluirNotebook(notebookId);
-            });
+    // Botões excluir
+    document.querySelectorAll('.excluir-notebook-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const notebookId = parseInt(btn.getAttribute('data-notebook-id'));
+            this.excluirNotebook(notebookId);
         });
+    });
 
-        console.log('✅ Listeners da gestão configurados');
-    }
+    console.log('✅ Listeners da gestão configurados');
+}
+
 
     // FUNÇÃO PRINCIPAL: Modal de Devolução CORRIGIDO
     abrirModalDevolucao(notebookId) {
@@ -2491,9 +2492,201 @@ class SistemaEmprestimos {
 
     // IMPLEMENTAR: Outras funções da gestão
     editarNotebook(id) {
-        console.log('✏️ Editando notebook:', id);
-        this.showToast('🚧 Função de edição em desenvolvimento', 'info');
+    console.log('✏️ Editando notebook ID:', id);
+    
+    const notebook = this.notebooks.find(nb => nb.id === id);
+    if (!notebook) {
+        this.showToast('❌ Notebook não encontrado!', 'error');
+        return;
     }
+
+    // Criar modal se não existir
+    let modal = document.getElementById('modalEditarNotebook');
+    if (!modal) {
+        modal = this.criarModalEditarNotebook();
+    }
+
+    // Preencher campos com dados atuais
+    this.preencherCamposEdicao(notebook);
+    
+    // Armazenar ID no modal
+    modal.setAttribute('data-notebook-id', id);
+    
+    // Mostrar modal
+    modal.classList.add('active');
+    
+    // Focar no primeiro campo
+    setTimeout(() => {
+        const primeiroInput = modal.querySelector('input[type="text"]');
+        if (primeiroInput) primeiroInput.focus();
+    }, 100);
+}
+
+criarModalEditarNotebook() {
+    const modal = document.createElement('div');
+    modal.id = 'modalEditarNotebook';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 800px; background: var(--black); border-radius: 12px; border: 2px solid var(--primary-orange);">
+            <div class="modal-header" style="background: var(--primary-orange); padding: 20px; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: var(--white); display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-edit"></i> Editar Notebook
+                </h2>
+                <button class="modal-close" style="background: none; border: none; color: var(--white); font-size: 24px; cursor: pointer; position: absolute; top: 15px; right: 20px;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="editNumero" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-hashtag"></i> Número do Notebook:
+                        </label>
+                        <input type="text" id="editNumero" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    <div class="form-group">
+                        <label for="editSerie" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-barcode"></i> Número de Série:
+                        </label>
+                        <input type="text" id="editSerie" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    <div class="form-group">
+                        <label for="editRfid" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-wifi"></i> RFID:
+                        </label>
+                        <input type="text" id="editRfid" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    <div class="form-group">
+                        <label for="editModelo" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-laptop"></i> Modelo:
+                        </label>
+                        <input type="text" id="editModelo" placeholder="Ex: Dell Inspiron 15 3000" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    <div class="form-group">
+                        <label for="editProcessador" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-microchip"></i> Processador:
+                        </label>
+                        <input type="text" id="editProcessador" placeholder="Ex: Intel Core i5-1135G7" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    <div class="form-group">
+                        <label for="editMemoria" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-memory"></i> Memória RAM:
+                        </label>
+                        <input type="text" id="editMemoria" placeholder="Ex: 8GB DDR4" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editDescricao" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                        <i class="fas fa-align-left"></i> Descrição/Observações:
+                    </label>
+                    <textarea 
+                        id="editDescricao" 
+                        rows="4" 
+                        placeholder="Informações adicionais, estado do equipamento, acessórios inclusos, etc."
+                        style="width: 100%; padding: 15px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white); resize: vertical; font-family: inherit;"
+                    ></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid var(--medium-gray); display: flex; gap: 15px; justify-content: flex-end;">
+                <button class="btn-secondary modal-close" style="padding: 12px 24px;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button id="confirmarEdicaoNotebook" class="btn-primary" style="padding: 12px 24px;">
+                    <i class="fas fa-save"></i> Salvar Alterações
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event listeners
+    modal.querySelector('#confirmarEdicaoNotebook').addEventListener('click', () => {
+        this.confirmarEdicaoNotebook();
+    });
+    
+    modal.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', () => this.closeModal());
+    });
+    
+    return modal;
+}
+
+preencherCamposEdicao(notebook) {
+    document.getElementById('editNumero').value = notebook.numero || '';
+    document.getElementById('editSerie').value = notebook.serie || '';
+    document.getElementById('editRfid').value = notebook.rfid || '';
+    document.getElementById('editModelo').value = notebook.modelo || '';
+    document.getElementById('editProcessador').value = notebook.processador || '';
+    document.getElementById('editMemoria').value = notebook.memoria || '';
+    document.getElementById('editDescricao').value = notebook.descricao || '';
+}
+
+async confirmarEdicaoNotebook() {
+    console.log('💾 Confirmando edição de notebook...');
+    
+    const modal = document.getElementById('modalEditarNotebook');
+    const notebookId = parseInt(modal.getAttribute('data-notebook-id'));
+    
+    const notebook = this.notebooks.find(nb => nb.id === notebookId);
+    if (!notebook) {
+        this.showToast('❌ Notebook não encontrado!', 'error');
+        return;
+    }
+    
+    const dadosNovos = {
+        numero: document.getElementById('editNumero').value.trim(),
+        serie: document.getElementById('editSerie').value.trim(),
+        rfid: document.getElementById('editRfid').value.trim(),
+        modelo: document.getElementById('editModelo').value.trim(),
+        processador: document.getElementById('editProcessador').value.trim(),
+        memoria: document.getElementById('editMemoria').value.trim(),
+        descricao: document.getElementById('editDescricao').value.trim()
+    };
+    
+    // Validações
+    if (!dadosNovos.numero || !dadosNovos.serie || !dadosNovos.rfid) {
+        this.showToast('❌ Número, Série e RFID são obrigatórios!', 'error');
+        return;
+    }
+    
+    // Verificar duplicatas (excluindo o próprio notebook)
+    const numeroExiste = this.notebooks.some(nb => nb.id !== notebookId && nb.numero === dadosNovos.numero);
+    const rfidExiste = this.notebooks.some(nb => nb.id !== notebookId && nb.rfid === dadosNovos.rfid);
+    
+    if (numeroExiste) {
+        this.showToast('❌ Já existe outro notebook com este número!', 'error');
+        return;
+    }
+    
+    if (rfidExiste) {
+        this.showToast('❌ Já existe outro notebook com este RFID!', 'error');
+        return;
+    }
+    
+    try {
+        // Atualizar dados do notebook
+        notebook.numero = dadosNovos.numero;
+        notebook.serie = dadosNovos.serie;
+        notebook.rfid = dadosNovos.rfid;
+        notebook.modelo = dadosNovos.modelo;
+        notebook.processador = dadosNovos.processador;
+        notebook.memoria = dadosNovos.memoria;
+        notebook.descricao = dadosNovos.descricao;
+        notebook.dataAtualizacao = new Date().toISOString();
+        
+        // Salvar no Firebase
+        await this.saveToFirebase();
+        
+        this.closeModal();
+        this.renderAll();
+        
+        this.showToast(`✅ Notebook ${dadosNovos.numero} atualizado com sucesso!`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Erro ao editar notebook:', error);
+        this.showToast('❌ Erro ao salvar alterações no Firebase', 'error');
+    }
+}
+
 
     async duplicarNotebook(id) {
         const notebook = this.notebooks.find(nb => nb.id === id);
@@ -2548,8 +2741,295 @@ class SistemaEmprestimos {
     }
 
     abrirModalEdicaoMassa() {
-        this.showToast('🚧 Função de edição em massa em desenvolvimento', 'info');
+    console.log('✏️ Abrindo modal de edição em massa...');
+    
+    let modal = document.getElementById('modalEdicaoMassa');
+    if (!modal) {
+        modal = this.criarModalEdicaoMassa();
     }
+    
+    // Gerar exemplo para o usuário
+    this.gerarExemploEdicaoMassa();
+    
+    modal.classList.add('active');
+    
+    // Focar no textarea
+    setTimeout(() => {
+        const textarea = modal.querySelector('#edicaoMassaTextarea');
+        if (textarea) textarea.focus();
+    }, 100);
+}
+
+criarModalEdicaoMassa() {
+    const modal = document.createElement('div');
+    modal.id = 'modalEdicaoMassa';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 900px; background: var(--black); border-radius: 12px; border: 2px solid var(--primary-orange);">
+            <div class="modal-header" style="background: var(--primary-orange); padding: 20px; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: var(--white); display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-edit"></i> Editar Todos em Massa
+                </h2>
+                <button class="modal-close" style="background: none; border: none; color: var(--white); font-size: 24px; cursor: pointer; position: absolute; top: 15px; right: 20px;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div style="background: rgba(255,107,53,0.1); padding: 20px; border-radius: 8px; border-left: 4px solid var(--primary-orange); margin-bottom: 25px;">
+                    <h3 style="color: var(--primary-orange); margin: 0 0 15px 0;">
+                        <i class="fas fa-info-circle"></i> Como usar a Edição em Massa
+                    </h3>
+                    <ul style="color: var(--white); margin: 0; padding-left: 20px;">
+                        <li>Cole os dados em formato <strong>Excel/CSV</strong> separados por TAB</li>
+                        <li>Formato: <code style="background: var(--dark-gray); padding: 2px 6px; border-radius: 4px;">NÚMERO    SÉRIE    RFID    MODELO    PROCESSADOR    MEMÓRIA    DESCRIÇÃO</code></li>
+                        <li>Apenas notebooks <strong>existentes</strong> serão atualizados (baseado no número)</li>
+                        <li>Notebooks não encontrados serão <strong>ignorados</strong></li>
+                    </ul>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="exemploEdicaoMassa" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                        <i class="fas fa-file-excel"></i> Exemplo baseado nos seus notebooks:
+                    </label>
+                    <textarea 
+                        id="exemploEdicaoMassa" 
+                        readonly
+                        rows="6" 
+                        style="width: 100%; padding: 15px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--light-orange); font-family: 'Courier New', monospace; font-size: 0.9rem; resize: vertical;"
+                    ></textarea>
+                    <button id="copiarExemplo" class="btn-secondary" style="margin-top: 10px; padding: 8px 16px;">
+                        <i class="fas fa-copy"></i> Copiar Exemplo
+                    </button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edicaoMassaTextarea" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                        <i class="fas fa-table"></i> Cole seus dados aqui:
+                    </label>
+                    <textarea 
+                        id="edicaoMassaTextarea" 
+                        rows="10" 
+                        placeholder="Cole aqui os dados em formato Excel/CSV separados por TAB..."
+                        style="width: 100%; padding: 15px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white); font-family: 'Courier New', monospace; font-size: 0.9rem; resize: vertical;"
+                    ></textarea>
+                    <small style="color: var(--light-orange); margin-top: 8px; display: block;">
+                        <i class="fas fa-lightbulb"></i> Dica: Copie e cole diretamente do Excel ou Google Sheets
+                    </small>
+                </div>
+                
+                <div style="background: var(--dark-gray); padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <button id="validarDados" class="btn-info" style="padding: 10px 20px;">
+                            <i class="fas fa-check-circle"></i> Validar Dados
+                        </button>
+                        <div id="statusValidacao" style="color: var(--white); font-size: 0.9rem;">
+                            <i class="fas fa-info-circle"></i> Clique em "Validar Dados" para verificar o formato
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid var(--medium-gray); display: flex; gap: 15px; justify-content: flex-end;">
+                <button class="btn-secondary modal-close" style="padding: 12px 24px;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button id="aplicarEdicaoMassa" class="btn-primary" style="padding: 12px 24px;" disabled>
+                    <i class="fas fa-save"></i> Aplicar Alterações
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event listeners
+    modal.querySelector('#copiarExemplo').addEventListener('click', () => this.copiarExemplo());
+    modal.querySelector('#validarDados').addEventListener('click', () => this.validarDadosEdicaoMassa());
+    modal.querySelector('#aplicarEdicaoMassa').addEventListener('click', () => this.aplicarEdicaoMassa());
+    modal.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', () => this.closeModal());
+    });
+    
+    return modal;
+}
+
+gerarExemploEdicaoMassa() {
+    const textarea = document.getElementById('exemploEdicaoMassa');
+    if (!textarea) return;
+    
+    let exemplo = 'NÚMERO\tSÉRIE\tRFID\tMODELO\tPROCESSADOR\tMEMÓRIA\tDESCRIÇÃO\n';
+    
+    // Pegar os primeiros 3 notebooks como exemplo
+    const exemplos = this.notebooks.slice(0, 3);
+    
+    exemplos.forEach(notebook => {
+        exemplo += `${notebook.numero}\t${notebook.serie}\t${notebook.rfid}\t`;
+        exemplo += `${notebook.modelo || 'Dell Inspiron 15 3000'}\t`;
+        exemplo += `${notebook.processador || 'Intel Core i5-1135G7'}\t`;
+        exemplo += `${notebook.memoria || '8GB DDR4'}\t`;
+        exemplo += `${notebook.descricao || 'Notebook para empréstimo'}\n`;
+    });
+    
+    textarea.value = exemplo;
+}
+
+copiarExemplo() {
+    const textarea = document.getElementById('exemploEdicaoMassa');
+    if (textarea) {
+        textarea.select();
+        document.execCommand('copy');
+        this.showToast('📋 Exemplo copiado para a área de transferência!', 'info');
+    }
+}
+
+validarDadosEdicaoMassa() {
+    const textarea = document.getElementById('edicaoMassaTextarea');
+    const statusDiv = document.getElementById('statusValidacao');
+    const btnAplicar = document.getElementById('aplicarEdicaoMassa');
+    
+    if (!textarea.value.trim()) {
+        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle" style="color: #F44336;"></i> Nenhum dado inserido';
+        btnAplicar.disabled = true;
+        return;
+    }
+    
+    try {
+        const linhas = textarea.value.trim().split('\n');
+        const cabecalho = linhas[0];
+        const dados = linhas.slice(1);
+        
+        if (dados.length === 0) {
+            statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle" style="color: #F44336;"></i> Apenas cabeçalho encontrado, sem dados';
+            btnAplicar.disabled = true;
+            return;
+        }
+        
+        let validados = 0;
+        let erros = 0;
+        let naoEncontrados = 0;
+        
+        dados.forEach((linha, index) => {
+            if (!linha.trim()) return;
+            
+            const colunas = linha.split('\t');
+            if (colunas.length < 3) {
+                erros++;
+                return;
+            }
+            
+            const numero = colunas[0]?.trim();
+            if (!numero) {
+                erros++;
+                return;
+            }
+            
+            const notebook = this.notebooks.find(nb => nb.numero === numero);
+            if (!notebook) {
+                naoEncontrados++;
+                return;
+            }
+            
+            validados++;
+        });
+        
+        if (validados === 0) {
+            statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: #F44336;"></i> Nenhum notebook válido encontrado`;
+            btnAplicar.disabled = true;
+        } else {
+            statusDiv.innerHTML = `
+                <i class="fas fa-check-circle" style="color: #4CAF50;"></i> 
+                <strong>${validados}</strong> notebook(s) serão atualizados
+                ${erros > 0 ? `| <span style="color: #F44336;">${erros} erro(s)</span>` : ''}
+                ${naoEncontrados > 0 ? `| <span style="color: #FFC107;">${naoEncontrados} não encontrado(s)</span>` : ''}
+            `;
+            btnAplicar.disabled = false;
+        }
+        
+    } catch (error) {
+        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle" style="color: #F44336;"></i> Erro ao validar dados';
+        btnAplicar.disabled = true;
+    }
+}
+
+async aplicarEdicaoMassa() {
+    const textarea = document.getElementById('edicaoMassaTextarea');
+    const btnAplicar = document.getElementById('aplicarEdicaoMassa');
+    
+    if (!textarea.value.trim()) {
+        this.showToast('❌ Nenhum dado para processar!', 'error');
+        return;
+    }
+    
+    // Desabilitar botão durante processamento
+    const textoOriginal = btnAplicar.innerHTML;
+    btnAplicar.disabled = true;
+    btnAplicar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+    
+    try {
+        const linhas = textarea.value.trim().split('\n');
+        const dados = linhas.slice(1); // Pular cabeçalho
+        
+        let atualizados = 0;
+        let erros = 0;
+        
+        dados.forEach(linha => {
+            if (!linha.trim()) return;
+            
+            const colunas = linha.split('\t');
+            if (colunas.length < 3) {
+                erros++;
+                return;
+            }
+            
+            const numero = colunas[0]?.trim();
+            const serie = colunas[1]?.trim();
+            const rfid = colunas[2]?.trim();
+            const modelo = colunas[3]?.trim() || '';
+            const processador = colunas[4]?.trim() || '';
+            const memoria = colunas[5]?.trim() || '';
+            const descricao = colunas[6]?.trim() || '';
+            
+            if (!numero || !serie || !rfid) {
+                erros++;
+                return;
+            }
+            
+            const notebook = this.notebooks.find(nb => nb.numero === numero);
+            if (!notebook) {
+                return; // Notebook não encontrado, pular
+            }
+            
+            // Atualizar dados
+            notebook.serie = serie;
+            notebook.rfid = rfid;
+            notebook.modelo = modelo;
+            notebook.processador = processador;
+            notebook.memoria = memoria;
+            notebook.descricao = descricao;
+            notebook.dataAtualizacao = new Date().toISOString();
+            
+            atualizados++;
+        });
+        
+        if (atualizados > 0) {
+            // Salvar no Firebase
+            await this.saveToFirebase();
+            
+            this.closeModal();
+            this.renderAll();
+            
+            this.showToast(`✅ ${atualizados} notebook(s) atualizado(s) com sucesso!${erros > 0 ? ` (${erros} erro(s) ignorados)` : ''}`, 'success');
+        } else {
+            this.showToast('❌ Nenhum notebook foi atualizado. Verifique os dados.', 'warning');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro na edição em massa:', error);
+        this.showToast('❌ Erro ao processar edição em massa', 'error');
+    } finally {
+        // Reabilitar botão
+        btnAplicar.disabled = false;
+        btnAplicar.innerHTML = textoOriginal;
+    }
+}
+
 
     abrirModalGerarLote() {
         this.showToast('🚧 Função de gerar lote em desenvolvimento', 'info');

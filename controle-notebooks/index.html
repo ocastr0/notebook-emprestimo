@@ -1577,7 +1577,7 @@ class SistemaEmprestimos {
     // Adicionar estas funções à classe SistemaEmprestimos
 
 async adicionarUsuario() {
-    if (!authGuard.isAdmin()) {
+    if (!authProtection.isAdmin()) {
         this.showToast('❌ Apenas administradores podem adicionar usuários', 'error');
         return;
     }
@@ -1604,7 +1604,7 @@ async adicionarUsuario() {
         users[email] = {
             role: role,
             permissions: role === 'admin' ? ['read', 'write', 'manage'] : ['read', 'write'],
-            createdBy: authGuard.getCurrentUser().uid,
+            createdBy: authProtection.getCurrentUser().uid,
             createdAt: new Date().toISOString(),
             displayName: name
         };
@@ -1627,7 +1627,7 @@ async adicionarUsuario() {
 }
 
 async alterarSenhaAdmin() {
-    if (!authGuard.isAdmin()) {
+    if (!authProtection.isAdmin()) {
         this.showToast('❌ Apenas administradores podem alterar senhas', 'error');
         return;
     }
@@ -1652,7 +1652,7 @@ async alterarSenhaAdmin() {
     }
 
     try {
-        const user = authGuard.getCurrentUser();
+        const user = authProtection.getCurrentUser();
         const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
         
         // Reautenticar
@@ -1675,7 +1675,7 @@ async alterarSenhaAdmin() {
 }
 
 async renderUsersList() {
-    if (!authGuard.isAdmin()) return;
+    if (!authProtection.isAdmin()) return;
 
     try {
         const snapshot = await firebase.database().ref('authorizedUsers').once('value');
@@ -1706,7 +1706,7 @@ async renderUsersList() {
 }
 
 async removerUsuario(email) {
-    if (!authGuard.isAdmin()) return;
+    if (!authProtection.isAdmin()) return;
 
     if (!confirm(`Remover usuário ${email}?`)) return;
 

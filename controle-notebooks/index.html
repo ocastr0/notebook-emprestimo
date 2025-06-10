@@ -555,77 +555,380 @@
     <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-database-compat.js"></script>
 
     <script>
-        // VERIFICAÇÃO DE ADMIN ÚNICA
-        (function() {
-            console.log('🔐 Verificando acesso de admin...');
-            
-            const isAdminLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
-            const adminEmail = localStorage.getItem('adminEmail');
-            const loginTime = localStorage.getItem('loginTime');
-            
-            // Verificar se admin está logado
-            if (!isAdminLoggedIn || adminEmail !== 'admin@sistema.com') {
-                console.log('❌ Admin não autenticado');
-                window.location.replace('./index-login.html');
-                return;
+        // CONFIGURAÇÃO FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-MT3SU98q0RZhEMh1IEpmgEaGXZPpKAQ",
+            authDomain: "notebook-emprestimo.firebaseapp.com",
+            databaseURL: "https://notebook-emprestimo-default-rtdb.firebaseio.com",
+            projectId: "notebook-emprestimo",
+            storageBucket: "notebook-emprestimo.firebasestorage.app",
+            messagingSenderId: "1007063409338",
+            appId: "1:1007063409338:web:5538614ffa1eaf315e5883",
+            measurementId: "G-56H4W8HG9Z"
+        };
+
+        // Verificar se Firebase já foi inicializado
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // REDIRECIONAMENTO AUTOMÁTICO PARA LOGIN
+        class AuthRedirect {
+            constructor() {
+                this.checkAuth();
             }
-            
-            // Verificar expiração (24 horas)
-            if (loginTime) {
-                const loginDate = new Date(loginTime);
-                const now = new Date();
-                const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+
+            checkAuth() {
+                console.log('🔍 Verificando autenticação...');
                 
-                if (hoursDiff > 24) {
-                    console.log('⏰ Sessão expirada');
-                    localStorage.clear();
-                    window.location.replace('./index-login.html');
-                    return;
-                }
+                // Mostrar loading
+                document.body.style.opacity = '0.3';
+                document.body.style.pointerEvents = 'none';
+
+                auth.onAuthStateChanged(async (user) => {
+                    if (user && user.email === 'admin@notebook-system.com') {
+                        // Admin autenticado - carregar sistema
+                        console.log('✅ Admin autenticado, carregando sistema...');
+                        await this.loadSystem(user);
+                    } else {
+                        // Não autenticado - redirecionar para login
+                        console.log('❌ Não autenticado, redirecionando para login...');
+                        if (user) {
+                            await auth.signOut(); // Logout se não for admin
+                        }
+                        window.location.href = 'index-login.html';
+                    }
+                });
             }
-            
-            console.log('✅ Admin autenticado, carregando sistema...');
-            
-            // Mostrar interface
-            document.addEventListener('DOMContentLoaded', () => {
-                document.body.style.opacity = '1';
-                document.body.style.pointerEvents = 'auto';
-                
-                // Adicionar info do admin
-                createAdminInfo();
-                
-                // Seu sistema atual aqui
-                if (typeof SistemaEmprestimos !== 'undefined') {
+
+            async loadSystem(user) {
+                try {
+                    // Criar interface do sistema
+                    await this.createSystemInterface();
+                    
+                    // Mostrar info do usuário
+                    this.showUserInfo(user);
+                    
+                    // Inicializar sistema
                     sistema = new SistemaEmprestimos();
+                    
+                    // Mostrar interface
+                    document.body.style.opacity = '1';
+                    document.body.style.pointerEvents = 'auto';
+                    
+                    console.log('✅ Sistema carregado com sucesso!');
+                    
+                } catch (error) {
+                    console.error('❌ Erro ao carregar sistema:', error);
+                    window.location.href = 'index-login.html';
                 }
-            });
-            
-            function createAdminInfo() {
-                const adminInfo = document.createElement('div');
-                adminInfo.innerHTML = `
-                    <div style="position: fixed; top: 10px; right: 20px; z-index: 1000; background: var(--dark-gray, #161B22); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--primary-orange, #FF6B35); display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-                        <div style="color: white; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
-                            <i class="fas fa-crown" style="color: var(--primary-orange, #FF6B35);"></i>
-                            <span>Admin Logado</span>
+            }
+
+            async createSystemInterface() {
+                document.body.innerHTML = `
+                    <div class="main-container">
+                        <!-- HEADER PRINCIPAL -->
+                        <header class="main-header">
+                            <div class="header-title">
+                                <i class="fas fa-laptop"></i>
+                                <h1>Sistema de Empréstimos</h1>
+                            </div>
+                            <div class="header-stats">
+                                <div class="stat-card">
+                                    <div class="stat-number" id="disponiveisCount">0</div>
+                                    <div class="stat-label">Disponíveis</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number" id="emprestadosCount">0</div>
+                                    <div class="stat-label">Em Uso</div>
+                                </div>
+                            </div>
+                        </header>
+
+                        <!-- NAVEGAÇÃO HORIZONTAL -->
+                        <nav class="nav-container">
+                            <div class="nav-tabs">
+                                <button class="nav-tab active" data-tab="dashboard">
+                                    <i class="fas fa-home"></i> Dashboard
+                                </button>
+                                <button class="nav-tab" data-tab="solicitar">
+                                    <i class="fas fa-plus"></i> Nova Solicitação
+                                </button>
+                                <button class="nav-tab" data-tab="calendario">
+                                    <i class="fas fa-calendar"></i> Calendário
+                                </button>
+                                <button class="nav-tab" data-tab="historico">
+                                    <i class="fas fa-history"></i> Histórico
+                                </button>
+                                <button class="nav-tab" data-tab="setores">
+                                    <i class="fas fa-building"></i> Setores
+                                </button>
+                            </div>
+                        </nav>
+
+                        <!-- CONTEÚDO PRINCIPAL -->
+                        <main class="content-container">
+                            <!-- ABA DASHBOARD -->
+                            <div id="dashboard" class="tab-content active">
+                                <div class="dashboard-section">
+                                    <h2 class="section-title">
+                                        <i class="fas fa-laptop"></i> Status dos Notebooks
+                                    </h2>
+                                    <div id="notebooksContainer" class="notebooks-grid">
+                                        <!-- Notebooks serão renderizados aqui -->
+                                    </div>
+                                </div>
+
+                                <div class="dashboard-section">
+                                    <h2 class="section-title">
+                                        <i class="fas fa-clipboard-list"></i> Empréstimos Ativos
+                                    </h2>
+                                    <div id="emprestimosAtivos" class="emprestimos-container">
+                                        <!-- Empréstimos ativos serão renderizados aqui -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ABA NOVA SOLICITAÇÃO -->
+                            <div id="solicitar" class="tab-content">
+                                <div class="dashboard-section">
+                                    <h2 class="section-title">
+                                        <i class="fas fa-plus"></i> Nova Solicitação de Empréstimo
+                                    </h2>
+                                    <form id="formSolicitacao" class="form-grid">
+                                        <div class="form-group">
+                                            <label for="nomeColaborador">
+                                                <i class="fas fa-user"></i> Nome do Colaborador
+                                            </label>
+                                            <input type="text" id="nomeColaborador" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="setorColaborador">
+                                                <i class="fas fa-building"></i> Setor
+                                            </label>
+                                            <select id="setorColaborador" required>
+                                                <option value="">Selecione o setor</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="notebookSelecionado">
+                                                <i class="fas fa-laptop"></i> Notebook
+                                            </label>
+                                            <select id="notebookSelecionado" required>
+                                                <option value="">Selecione um notebook</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="numeroChamado">
+                                                <i class="fas fa-ticket-alt"></i> Número do Chamado
+                                            </label>
+                                            <input type="text" id="numeroChamado" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="dataPrevisaoDevolucao">
+                                                <i class="fas fa-calendar"></i> Data de Devolução
+                                            </label>
+                                            <input type="date" id="dataPrevisaoDevolucao" required>
+                                        </div>
+
+                                        <div class="form-group" style="grid-column: 1 / -1;">
+                                            <label for="motivoEmprestimo">
+                                                <i class="fas fa-comment"></i> Motivo do Empréstimo
+                                            </label>
+                                            <textarea id="motivoEmprestimo" rows="3" required></textarea>
+                                        </div>
+
+                                        <div style="grid-column: 1 / -1; text-align: center;">
+                                            <button type="submit" class="btn-primary">
+                                                <i class="fas fa-paper-plane"></i> Solicitar Empréstimo
+                                            </button>
+                                            <button type="reset" class="btn-secondary">
+                                                <i class="fas fa-times"></i> Limpar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- ABA CALENDÁRIO -->
+                            <div id="calendario" class="tab-content">
+                                <div class="dashboard-section">
+                                    <h2 class="section-title">
+                                        <i class="fas fa-calendar"></i> Calendário de Devoluções
+                                    </h2>
+                                    <div style="background: var(--dark-gray); border-radius: 12px; padding: 30px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                                            <button id="prevMonth" class="btn-secondary">
+                                                <i class="fas fa-chevron-left"></i> Anterior
+                                            </button>
+                                            <h2 id="monthYear" style="color: var(--primary-orange); margin: 0;">
+                                                Carregando...
+                                            </h2>
+                                            <button id="nextMonth" class="btn-secondary">
+                                                Próximo <i class="fas fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                        <div id="calendar"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ABA HISTÓRICO -->
+                            <div id="historico" class="tab-content">
+                                <div class="dashboard-section">
+                                    <h2 class="section-title">
+                                        <i class="fas fa-history"></i> Histórico de Empréstimos
+                                    </h2>
+                                    
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; background: var(--dark-gray); padding: 20px; border-radius: 12px;">
+                                        <div class="form-group">
+                                            <label for="filtroNome">Filtrar por Nome:</label>
+                                            <input type="text" id="filtroNome" placeholder="Digite o nome...">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="filtroSetor">Filtrar por Setor:</label>
+                                            <select id="filtroSetor">
+                                                <option value="">Todos os setores</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="filtroMes">Filtrar por Mês:</label>
+                                            <input type="month" id="filtroMes">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="table-container">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Notebook</th>
+                                                    <th>Colaborador</th>
+                                                    <th>Setor</th>
+                                                    <th>Chamado</th>
+                                                    <th>Data Entrega</th>
+                                                    <th>Data Devolução</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="historicoTableBody">
+                                                <!-- Dados serão inseridos aqui -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ABA SETORES -->
+                            <div id="setores" class="tab-content">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                                    <!-- GERENCIAR SETORES -->
+                                    <div class="dashboard-section">
+                                        <h2 class="section-title">
+                                            <i class="fas fa-building"></i> Gerenciar Setores
+                                        </h2>
+                                        
+                                        <div style="background: var(--dark-gray); border-radius: 12px; padding: 25px;">
+                                            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                                                <input type="text" id="novoSetor" placeholder="Nome do novo setor..." style="flex: 1; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--black); color: var(--white);">
+                                                <button class="btn-primary">
+                                                    <i class="fas fa-plus"></i> Adicionar
+                                                </button>
+                                            </div>
+                                            
+                                            <div id="setoresList">
+                                                <!-- Lista de setores será renderizada aqui -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- GESTÃO DE NOTEBOOKS -->
+                                    <div class="dashboard-section">
+                                        <h2 class="section-title">
+                                            <i class="fas fa-laptop"></i> Gestão de Notebooks
+                                        </h2>
+                                        
+                                        <div style="background: var(--dark-gray); border-radius: 12px; padding: 25px;">
+                                            <div style="text-align: center; margin-bottom: 20px;">
+                                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                                                    <div style="background: var(--black); padding: 15px; border-radius: 8px; text-align: center;">
+                                                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-orange);" id="totalNotebooks">0</div>
+                                                        <div style="font-size: 0.8rem; color: var(--white);">Total</div>
+                                                    </div>
+                                                    <div style="background: var(--black); padding: 15px; border-radius: 8px; text-align: center;">
+                                                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--green);" id="disponiveis">0</div>
+                                                        <div style="font-size: 0.8rem; color: var(--white);">Disponíveis</div>
+                                                    </div>
+                                                    <div style="background: var(--black); padding: 15px; border-radius: 8px; text-align: center;">
+                                                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--red);" id="emUso">0</div>
+                                                        <div style="font-size: 0.8rem; color: var(--white);">Em Uso</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+                                                    <button class="btn-primary">Adicionar Notebook</button>
+                                                    <button class="btn-secondary">Editar Todos em Massa</button>
+                                                    <button class="btn-secondary">Gerar em Lote</button>
+                                                    <button class="btn-secondary">Exportar</button>
+                                                    <button class="btn-secondary">Importar</button>
+                                                    <button class="btn-danger">Resetar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="notebooksEdicaoContainer">
+                                            <!-- Lista de notebooks para edição será renderizada aqui -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                `;
+            }
+
+            showUserInfo(user) {
+                const userInfo = document.createElement('div');
+                userInfo.id = 'user-info';
+                userInfo.innerHTML = `
+                    <div style="position: fixed; top: 10px; right: 20px; z-index: 1000; background: var(--dark-gray); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--primary-orange); display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-crown" style="color: var(--primary-orange);"></i>
+                            <div>
+                                <div style="color: var(--white); font-size: 0.9rem; font-weight: 600;">Administrador</div>
+                                <div style="color: var(--light-orange); font-size: 0.75rem;">${user.email}</div>
+                            </div>
                         </div>
-                        <button onclick="adminLogout()" style="background: #DA3633; border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                        <button onclick="authRedirect.logout()" style="background: var(--red); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s ease;">
                             <i class="fas fa-sign-out-alt"></i> Sair
                         </button>
                     </div>
                 `;
-                document.body.appendChild(adminInfo);
+                document.body.appendChild(userInfo);
             }
-            
-            // Função global de logout
-            window.adminLogout = function() {
-                if (confirm('Deseja realmente sair do sistema?')) {
-                    localStorage.clear();
-                    window.location.replace('./index-login.html');
+
+            async logout() {
+                try {
+                    await auth.signOut();
+                    window.location.href = 'index-login.html';
+                } catch (error) {
+                    console.error('Erro no logout:', error);
+                    window.location.href = 'index-login.html';
                 }
-            };
-            
-        })();
+            }
+        }
+
+        // Inicializar redirecionamento
+        let authRedirect;
+        authRedirect = new AuthRedirect();
     </script>
+
     <!-- CLASSE SISTEMA EMPRÉSTIMOS ORIGINAL -->
     <script>
         class SistemaEmprestimos {

@@ -1484,94 +1484,115 @@ class SistemaEmprestimos {
     }
 
     async setupEventListeners() {
-        console.log('🔧 Configurando event listeners...');
+    console.log('🔧 Configurando event listeners...');
 
-        // Navegação entre tabs
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const tabName = e.target.closest('.tab-btn').dataset.tab;
-                this.switchTab(tabName);
-            });
+    // Navegação entre tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const tabName = e.target.closest('.tab-btn').dataset.tab;
+            this.switchTab(tabName);
         });
+    });
 
-        // BOTÃO ADICIONAR SETOR - Corrigir seletor
-        const adicionarSetorBtn = document.querySelector('.btn-primary');
-        if (adicionarSetorBtn && adicionarSetorBtn.textContent.includes('Adicionar')) {
-            adicionarSetorBtn.onclick = null; // Remove onclick inline se existir
-            adicionarSetorBtn.addEventListener('click', (e) => {
+    // FORMULÁRIO DE SOLICITAÇÃO
+    const formSolicitacao = document.getElementById('formSolicitacao');
+    if (formSolicitacao) {
+        formSolicitacao.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.criarSolicitacao();
+        });
+        console.log('✅ Formulário de solicitação configurado');
+    }
+
+    // BOTÃO SOLICITAR EMPRÉSTIMO (backup se o form não funcionar)
+    const btnSolicitar = document.querySelector('button[type="submit"]');
+    if (btnSolicitar) {
+        btnSolicitar.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.criarSolicitacao();
+        });
+        console.log('✅ Botão solicitar empréstimo configurado');
+    }
+
+    // BOTÃO ADICIONAR SETOR
+    const btnAdicionarSetor = document.querySelector('.btn-primary');
+    if (btnAdicionarSetor && btnAdicionarSetor.textContent.includes('Adicionar')) {
+        btnAdicionarSetor.onclick = null;
+        btnAdicionarSetor.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.adicionarSetor();
+        });
+        console.log('✅ Botão adicionar setor configurado');
+    }
+
+    // INPUT SETOR COM ENTER
+    const inputSetor = document.getElementById('novoSetor');
+    if (inputSetor) {
+        inputSetor.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
                 e.preventDefault();
                 this.adicionarSetor();
-            });
-            console.log('✅ Botão adicionar setor configurado');
-        }
-
-        // INPUT SETOR COM ENTER
-        const novoSetorInput = document.getElementById('novoSetor');
-        if (novoSetorInput) {
-            novoSetorInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.adicionarSetor();
-                }
-            });
-            console.log('✅ Input setor configurado');
-        }
-
-        // BOTÕES DE NOTEBOOKS - Remover onclick inline e adicionar listeners
-        const botoesNotebook = {
-            'Adicionar Notebook': () => this.abrirModalAdicionarNotebook(),
-            'Editar Todos em Massa': () => this.abrirModalEdicaoMassa(),
-            'Gerar em Lote': () => this.abrirModalGerarLote(),
-            'Exportar': () => this.exportarNotebooks(),
-            'Importar': () => this.importarNotebooks(),
-            'Resetar': () => this.resetarNotebooks()
-        };
-
-        Object.entries(botoesNotebook).forEach(([texto, funcao]) => {
-            const botoes = Array.from(document.querySelectorAll('button')).filter(btn => 
-                btn.textContent.includes(texto)
-            );
-            
-            botoes.forEach(botao => {
-                botao.onclick = null; // Remove onclick inline
-                botao.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    funcao();
-                });
-                console.log(`✅ Botão "${texto}" configurado`);
-            });
-        });
-
-        // Formulário de empréstimo
-        const formSolicitacao = document.getElementById('formSolicitacao');
-        if (formSolicitacao) {
-            formSolicitacao.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.criarSolicitacao();
-            });
-        }
-
-        // Modais
-        document.querySelectorAll('.modal-close').forEach(btn => {
-            btn.addEventListener('click', () => this.closeModal());
-        });
-
-        // Fechar modal clicando fora
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                this.closeModal();
             }
         });
-
-        // ESC para fechar modal
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.closeModal();
-            }
-        });
-
-        console.log('✅ Todos os event listeners configurados');
+        console.log('✅ Input setor configurado');
     }
+
+    // BOTÕES DE GESTÃO DE NOTEBOOKS
+    const botoesGestao = {
+        'Adicionar Notebook': () => this.abrirModalAdicionarNotebook(),
+        'Editar Todos em Massa': () => this.abrirModalEdicaoMassa(),
+        'Gerar em Lote': () => this.abrirModalGerarLote(),
+        'Exportar': () => this.exportarNotebooks(),
+        'Importar': () => this.importarNotebooks(),
+        'Resetar': () => this.resetarNotebooks()
+    };
+
+    Object.entries(botoesGestao).forEach(([texto, funcao]) => {
+        const botoes = Array.from(document.querySelectorAll('button')).filter(btn => 
+            btn.textContent.trim().includes(texto)
+        );
+        
+        botoes.forEach(botao => {
+            botao.onclick = null;
+            botao.addEventListener('click', (e) => {
+                e.preventDefault();
+                funcao();
+            });
+            console.log(`✅ Botão "${texto}" configurado`);
+        });
+    });
+
+    // CONFIRMAR ADICIONAR NOTEBOOK
+    const btnConfirmarAdd = document.getElementById('confirmarAdicionarNotebook');
+    if (btnConfirmarAdd) {
+        btnConfirmarAdd.onclick = null;
+        btnConfirmarAdd.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.confirmarAdicionarNotebook();
+        });
+        console.log('✅ Botão confirmar adicionar notebook configurado');
+    }
+
+    // MODAIS
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', () => this.closeModal());
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            this.closeModal();
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            this.closeModal();
+        }
+    });
+
+    console.log('✅ Todos os event listeners configurados');
+}
+
 
     renderAll() {
         console.log('🎨 Renderizando interface...');
@@ -1695,6 +1716,172 @@ class SistemaEmprestimos {
         }
     }
 
+    async criarSolicitacao() {
+    console.log('📝 Criando nova solicitação...');
+
+    // Buscar dados do formulário
+    const formData = {
+        nome: document.getElementById('nomeColaborador')?.value.trim(),
+        setor: document.getElementById('setorColaborador')?.value,
+        notebookId: parseInt(document.getElementById('notebookSelecionado')?.value),
+        chamado: document.getElementById('numeroChamado')?.value.trim(),
+        motivo: document.getElementById('motivoEmprestimo')?.value.trim(),
+        previsaoDevolucao: document.getElementById('dataPrevisaoDevolucao')?.value
+    };
+
+    console.log('📋 Dados do formulário:', formData);
+
+    // Validações detalhadas
+    if (!formData.nome) {
+        this.showToast('Nome do colaborador é obrigatório!', 'error');
+        document.getElementById('nomeColaborador')?.focus();
+        return;
+    }
+
+    if (formData.nome.length < 2) {
+        this.showToast('Nome deve ter pelo menos 2 caracteres!', 'error');
+        document.getElementById('nomeColaborador')?.focus();
+        return;
+    }
+
+    if (!formData.setor) {
+        this.showToast('Setor é obrigatório!', 'error');
+        document.getElementById('setorColaborador')?.focus();
+        return;
+    }
+
+    if (!formData.notebookId || isNaN(formData.notebookId)) {
+        this.showToast('Selecione um notebook!', 'error');
+        document.getElementById('notebookSelecionado')?.focus();
+        return;
+    }
+
+    if (!formData.chamado) {
+        this.showToast('Número do chamado é obrigatório!', 'error');
+        document.getElementById('numeroChamado')?.focus();
+        return;
+    }
+
+    if (formData.chamado.length < 3) {
+        this.showToast('Número do chamado deve ter pelo menos 3 caracteres!', 'error');
+        document.getElementById('numeroChamado')?.focus();
+        return;
+    }
+
+    if (!formData.motivo) {
+        this.showToast('Motivo do empréstimo é obrigatório!', 'error');
+        document.getElementById('motivoEmprestimo')?.focus();
+        return;
+    }
+
+    if (formData.motivo.length < 10) {
+        this.showToast('Motivo deve ter pelo menos 10 caracteres!', 'error');
+        document.getElementById('motivoEmprestimo')?.focus();
+        return;
+    }
+
+    if (!formData.previsaoDevolucao) {
+        this.showToast('Data de previsão de devolução é obrigatória!', 'error');
+        document.getElementById('dataPrevisaoDevolucao')?.focus();
+        return;
+    }
+
+    // Verificar se a data não é no passado
+    const hoje = new Date();
+    const previsao = new Date(formData.previsaoDevolucao);
+    if (previsao <= hoje) {
+        this.showToast('Data de devolução deve ser no futuro!', 'error');
+        document.getElementById('dataPrevisaoDevolucao')?.focus();
+        return;
+    }
+
+    // Encontrar notebook selecionado
+    const notebookSelecionado = this.notebooks.find(nb => nb.id === formData.notebookId);
+    
+    if (!notebookSelecionado) {
+        this.showToast('Notebook não encontrado!', 'error');
+        this.updateNotebookOptions(); // Atualizar lista
+        return;
+    }
+
+    if (notebookSelecionado.status !== 'disponivel') {
+        this.showToast('O notebook selecionado não está mais disponível!', 'error');
+        this.updateNotebookOptions(); // Atualizar lista
+        return;
+    }
+
+    try {
+        console.log('💾 Processando empréstimo...');
+        
+        const agora = new Date().toISOString();
+        const emprestimoId = Date.now();
+        
+        // Criar objeto empréstimo
+        const novoEmprestimo = {
+            id: emprestimoId,
+            notebookId: notebookSelecionado.id,
+            colaborador: formData.nome,
+            setor: formData.setor,
+            chamado: formData.chamado,
+            motivo: formData.motivo,
+            dataEntrega: agora,
+            previsaoDevolucao: formData.previsaoDevolucao,
+            status: 'ativo',
+            dataCriacao: agora
+        };
+
+        // Adicionar empréstimo ao array
+        this.emprestimos.push(novoEmprestimo);
+
+        // Atualizar notebook para status emprestado
+        notebookSelecionado.status = 'emprestado';
+        notebookSelecionado.colaborador = formData.nome;
+        notebookSelecionado.setor = formData.setor;
+        notebookSelecionado.chamado = formData.chamado;
+        notebookSelecionado.dataEntrega = agora;
+        notebookSelecionado.previsaoDevolucao = formData.previsaoDevolucao;
+
+        // Salvar no Firebase
+        await this.saveToFirebase();
+
+        // Limpar formulário
+        const form = document.getElementById('formSolicitacao');
+        if (form) {
+            form.reset();
+        }
+
+        // Atualizar data mínima
+        this.setMinDate();
+
+        // Atualizar todas as interfaces
+        this.renderAll();
+
+        // Mostrar sucesso
+        this.showToast(`✅ Notebook ${notebookSelecionado.numero} emprestado com sucesso para ${formData.nome}!`, 'success');
+        
+        // Voltar para dashboard
+        this.switchTab('dashboard');
+
+        console.log('✅ Empréstimo criado com sucesso:', novoEmprestimo);
+        
+    } catch (error) {
+        console.error('❌ Erro ao criar empréstimo:', error);
+        this.showToast('Erro ao processar empréstimo. Tente novamente.', 'error');
+        
+        // Reverter mudanças em caso de erro
+        this.emprestimos = this.emprestimos.filter(emp => emp.id !== emprestimoId);
+        if (notebookSelecionado) {
+            notebookSelecionado.status = 'disponivel';
+            notebookSelecionado.colaborador = null;
+            notebookSelecionado.setor = null;
+            notebookSelecionado.chamado = null;
+            notebookSelecionado.dataEntrega = null;
+            notebookSelecionado.previsaoDevolucao = null;
+        }
+    }
+}
+
+
     renderSetores() {
         const container = document.getElementById('setoresList');
         if (!container) {
@@ -1723,33 +1910,194 @@ class SistemaEmprestimos {
         `).join('');
     }
 
+    abrirModalAdicionarNotebook() {
+    console.log('📱 Abrindo modal adicionar notebook...');
+    
+    const modal = document.getElementById('modalAdicionarNotebook');
+    if (!modal) {
+        console.error('❌ Modal modalAdicionarNotebook não encontrado!');
+        this.showToast('Modal de adicionar notebook não encontrado', 'error');
+        return;
+    }
+
+    // Limpar todos os campos
+    const campos = [
+        'novoNotebookNumero',
+        'novoNotebookSerie', 
+        'novoNotebookRfid',
+        'novoNotebookModelo',
+        'novoNotebookProcessador',
+        'novoNotebookMemoria',
+        'novoNotebookDescricao'
+    ];
+
+    campos.forEach(campo => {
+        const input = document.getElementById(campo);
+        if (input) input.value = '';
+    });
+
+    // Gerar valores automáticos
+    const proximoNumero = this.gerarProximoNumero();
+    const proximaSerie = this.gerarProximaSerie();
+    const proximoRfid = this.gerarProximoRfid();
+
+    const numeroInput = document.getElementById('novoNotebookNumero');
+    const serieInput = document.getElementById('novoNotebookSerie');
+    const rfidInput = document.getElementById('novoNotebookRfid');
+
+    if (numeroInput) numeroInput.value = proximoNumero;
+    if (serieInput) serieInput.value = proximaSerie;
+    if (rfidInput) rfidInput.value = proximoRfid;
+
+    modal.classList.add('active');
+    console.log('✅ Modal adicionar notebook aberto');
+}
+
+gerarProximoNumero() {
+    const ultimoId = this.notebooks.length > 0 ? Math.max(...this.notebooks.map(nb => nb.id)) : 0;
+    return `EMPRESTIMO_${(ultimoId + 1).toString().padStart(2, '0')}`;
+}
+
+gerarProximaSerie() {
+    return `${Math.floor(Math.random() * 9000) + 1000}DD3`;
+}
+
+gerarProximoRfid() {
+    const ultimoRfid = this.notebooks.length > 0 ? 
+        Math.max(...this.notebooks.map(nb => parseInt(nb.rfid.replace('RF', '') || '200794'))) : 200794;
+    return `${ultimoRfid + 1}`;
+}
+
+async confirmarAdicionarNotebook() {
+    console.log('💾 Confirmando adição de notebook...');
+
+    const campos = {
+        numero: document.getElementById('novoNotebookNumero')?.value.trim(),
+        serie: document.getElementById('novoNotebookSerie')?.value.trim(),
+        rfid: document.getElementById('novoNotebookRfid')?.value.trim(),
+        modelo: document.getElementById('novoNotebookModelo')?.value.trim(),
+        processador: document.getElementById('novoNotebookProcessador')?.value.trim(),
+        memoria: document.getElementById('novoNotebookMemoria')?.value.trim(),
+        descricao: document.getElementById('novoNotebookDescricao')?.value.trim()
+    };
+
+    // Validações
+    if (!campos.numero || !campos.serie || !campos.rfid) {
+        this.showToast('Número, Série e RFID são obrigatórios!', 'error');
+        return;
+    }
+
+    // Verificar duplicatas
+    const numeroExiste = this.notebooks.some(nb => nb.numero === campos.numero);
+    const rfidExiste = this.notebooks.some(nb => nb.rfid === campos.rfid);
+
+    if (numeroExiste) {
+        this.showToast('Já existe um notebook com este número!', 'error');
+        return;
+    }
+
+    if (rfidExiste) {
+        this.showToast('Já existe um notebook com este RFID!', 'error');
+        return;
+    }
+
+    try {
+        const proximoId = this.notebooks.length > 0 ? Math.max(...this.notebooks.map(nb => nb.id)) + 1 : 1;
+        
+        const novoNotebook = {
+            id: proximoId,
+            numero: campos.numero,
+            serie: campos.serie,
+            rfid: campos.rfid,
+            modelo: campos.modelo,
+            processador: campos.processador,
+            memoria: campos.memoria,
+            descricao: campos.descricao,
+            dataCadastro: new Date().toISOString(),
+            status: 'disponivel',
+            colaborador: null,
+            setor: null,
+            chamado: null,
+            dataEntrega: null,
+            previsaoDevolucao: null
+        };
+
+        // Adicionar ao array local
+        this.notebooks.push(novoNotebook);
+        
+        // Salvar no Firebase
+        await this.saveToFirebase();
+
+        // Fechar modal
+        this.closeModal();
+        
+        // Atualizar todas as interfaces
+        this.renderAll();
+
+        this.showToast(`✅ Notebook ${campos.numero} adicionado com sucesso!`, 'success');
+        
+        console.log('✅ Notebook adicionado:', novoNotebook);
+        
+    } catch (error) {
+        console.error('❌ Erro ao adicionar notebook:', error);
+        // Reverter mudança em caso de erro
+        this.notebooks = this.notebooks.filter(nb => nb.numero !== campos.numero);
+        this.showToast('Erro ao salvar notebook. Tente novamente.', 'error');
+    }
+}
+
+
     renderListaNotebooksEdicao() {
-        const container = document.getElementById('notebooksEdicaoContainer');
-        if (!container) return;
+    const container = document.getElementById('notebooksEdicaoContainer');
+    if (!container) {
+        console.error('❌ Container notebooksEdicaoContainer não encontrado!');
+        return;
+    }
 
-        if (this.notebooks.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 20px; opacity: 0.7;">
-                    <p>Nenhum notebook cadastrado</p>
-                </div>
-            `;
-            return;
-        }
+    console.log(`🎨 Renderizando lista de edição: ${this.notebooks.length} notebooks`);
 
-        container.innerHTML = this.notebooks.map(notebook => `
-            <div class="notebook-edicao-item">
-                <div class="notebook-edicao-info">
-                    <strong>${notebook.numero}</strong> - ${notebook.serie} - ${notebook.rfid}
-                    <br><small>${notebook.modelo || 'Modelo não informado'}</small>
+    if (!this.notebooks || this.notebooks.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; background: var(--dark-gray); border-radius: 12px; margin: 20px 0;">
+                <i class="fas fa-laptop" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
+                <p>Nenhum notebook cadastrado</p>
+                <button class="btn-primary" onclick="sistema.criarNotebooksDefault()">
+                    <i class="fas fa-plus"></i> Criar Notebooks Padrão
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = this.notebooks.map(notebook => `
+        <div class="notebook-edicao-item" style="background: var(--dark-gray); border-radius: 8px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--primary-orange);">
+            <div class="notebook-edicao-info">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: var(--primary-orange); font-size: 1.1rem;">${notebook.numero}</strong>
+                        <span style="margin-left: 10px; color: #ccc;">Série: ${notebook.serie}</span>
+                        <span style="margin-left: 10px; color: #ccc;">RFID: ${notebook.rfid}</span>
+                    </div>
+                    <div class="notebook-edicao-actions">
+                        <button class="btn-secondary btn-small" onclick="sistema.editarNotebook(${notebook.id})" style="margin-right: 5px;">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn-danger btn-small" onclick="sistema.excluirNotebook(${notebook.id})">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
+                    </div>
                 </div>
-                <div class="notebook-edicao-actions">
-                    <button class="btn-secondary btn-small" onclick="sistema.editarNotebook(${notebook.id})">
-                        <i class="fas fa-edit"></i> Editar
-                    </button>
+                <div style="margin-top: 8px; font-size: 0.9rem; color: #aaa;">
+                    <div>Modelo: ${notebook.modelo || 'Não informado'}</div>
+                    <div>Status: <span class="status-badge status-${notebook.status}">${notebook.status === 'disponivel' ? 'Disponível' : 'Em Uso'}</span></div>
+                    ${notebook.colaborador ? `<div>Emprestado para: <strong>${notebook.colaborador}</strong> (${notebook.setor})</div>` : ''}
                 </div>
             </div>
-        `).join('');
-    }
+        </div>
+    `).join('');
+
+    console.log('✅ Lista de notebooks para edição renderizada');
+}
 
     updateStats() {
         const disponiveisCount = this.notebooks.filter(nb => nb.status === 'disponivel').length;

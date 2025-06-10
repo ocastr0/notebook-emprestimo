@@ -1354,39 +1354,33 @@ class SistemaEmprestimos {
         this.currentMonth = new Date();
         this.isLoading = false;
         
-        // Referencias Firebase
+        // Referencias Firebase (mesmo padrão do seu exemplo)
         this.dbNotebooks = firebase.database().ref().child('notebooks');
         this.dbEmprestimos = firebase.database().ref().child('emprestimos');
         this.dbSetores = firebase.database().ref().child('setores');
         
+        console.log('🚀 Inicializando sistema...');
         this.init();
     }
 
     async init() {
-        console.log('🚀 Iniciando sistema...');
-        
         try {
             this.isLoading = true;
             
             // Carregar dados do Firebase
             await this.loadFromFirebase();
             
-            // Configurar eventos APÓS carregar dados
-            await this.setupEventListeners();
+            // Configurar eventos
+            this.setupEventListeners();
             
             // Renderizar tudo
             this.renderAll();
             
             console.log('✅ Sistema iniciado com sucesso!');
-            console.log('📊 Dados carregados:', {
-                notebooks: this.notebooks.length,
-                emprestimos: this.emprestimos.length,
-                setores: this.setores.length
-            });
             
         } catch (error) {
             console.error('❌ Erro ao iniciar sistema:', error);
-            this.showToast('Erro ao inicializar sistema', 'error');
+            this.createDefaultData();
         } finally {
             this.isLoading = false;
         }
@@ -1396,7 +1390,7 @@ class SistemaEmprestimos {
         console.log('📡 Carregando dados do Firebase...');
         
         try {
-            // Carregar todos os dados em paralelo
+            // Carregar todos os dados
             const [notebooksSnap, emprestimosSnap, setoresSnap] = await Promise.all([
                 this.dbNotebooks.once('value'),
                 this.dbEmprestimos.once('value'),
@@ -1406,7 +1400,7 @@ class SistemaEmprestimos {
             // Processar notebooks
             if (notebooksSnap.exists()) {
                 const data = notebooksSnap.val();
-                this.notebooks = Array.isArray(data) ? data.filter(Boolean) : Object.values(data).filter(Boolean);
+                this.notebooks = Array.isArray(data) ? data.filter(Boolean) : Object.values(data || {}).filter(Boolean);
                 console.log('📱 Notebooks carregados:', this.notebooks.length);
             } else {
                 console.log('📱 Criando notebooks padrão...');
@@ -1417,17 +1411,17 @@ class SistemaEmprestimos {
             // Processar empréstimos
             if (emprestimosSnap.exists()) {
                 const data = emprestimosSnap.val();
-                this.emprestimos = Array.isArray(data) ? data.filter(Boolean) : Object.values(data).filter(Boolean);
+                this.emprestimos = Array.isArray(data) ? data.filter(Boolean) : Object.values(data || {}).filter(Boolean);
                 console.log('📋 Empréstimos carregados:', this.emprestimos.length);
             } else {
                 this.emprestimos = [];
-                await this.dbEmprestimos.set(this.emprestimos);
+                await this.dbEmprestimos.set([]);
             }
 
             // Processar setores
             if (setoresSnap.exists()) {
                 const data = setoresSnap.val();
-                this.setores = Array.isArray(data) ? data.filter(Boolean) : Object.values(data).filter(Boolean);
+                this.setores = Array.isArray(data) ? data.filter(Boolean) : Object.values(data || {}).filter(Boolean);
                 console.log('🏢 Setores carregados:', this.setores.length);
             } else {
                 console.log('🏢 Criando setores padrão...');
@@ -1437,13 +1431,15 @@ class SistemaEmprestimos {
 
         } catch (error) {
             console.error('❌ Erro ao carregar do Firebase:', error);
-            // Fallback para dados locais
-            this.notebooks = this.createDefaultNotebooks();
-            this.emprestimos = [];
-            this.setores = this.createDefaultSetores();
-            
-            this.showToast('Usando dados locais (Firebase indisponível)', 'warning');
+            this.createDefaultData();
         }
+    }
+
+    createDefaultData() {
+        console.log('🔧 Criando dados padrão...');
+        this.notebooks = this.createDefaultNotebooks();
+        this.emprestimos = [];
+        this.setores = this.createDefaultSetores();
     }
 
     createDefaultNotebooks() {
@@ -1483,119 +1479,105 @@ class SistemaEmprestimos {
         ];
     }
 
-    async setupEventListeners() {
-    console.log('🔧 Configurando event listeners...');
+    setupEventListeners() {
+        console.log('🔧 Configurando event listeners...');
 
-    // Navegação entre tabs
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const tabName = e.target.closest('.tab-btn').dataset.tab;
-            this.switchTab(tabName);
+        // Navegação entre tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tabName = e.target.closest('.tab-btn').dataset.tab;
+                this.switchTab(tabName);
+            });
         });
-    });
 
-    // FORMULÁRIO DE SOLICITAÇÃO
-    const formSolicitacao = document.getElementById('formSolicitacao');
-    if (formSolicitacao) {
-        formSolicitacao.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.criarSolicitacao();
-        });
-        console.log('✅ Formulário de solicitação configurado');
-    }
+        // FORMULÁRIO DE SOLICITAÇÃO - CORRIGIDO
+        const formSolicitacao = document.getElementById('formSolicitacao');
+        if (formSolicitacao) {
+            formSolicitacao.addEventListener('submit', (e) => {
+                e.preventDefault();
+                console.log('📝 Submit do formulário interceptado');
+                this.criarSolicitacao();
+            });
+        }
 
-    // BOTÃO SOLICITAR EMPRÉSTIMO (backup se o form não funcionar)
-    const btnSolicitar = document.querySelector('button[type="submit"]');
-    if (btnSolicitar) {
-        btnSolicitar.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.criarSolicitacao();
-        });
-        console.log('✅ Botão solicitar empréstimo configurado');
-    }
+        // BOTÃO SOLICITAR EMPRÉSTIMO - BACKUP
+        const btnSolicitar = document.querySelector('button[type="submit"]');
+        if (btnSolicitar) {
+            btnSolicitar.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📝 Botão solicitar clicado');
+                this.criarSolicitacao();
+            });
+        }
 
-    // BOTÃO ADICIONAR SETOR
-    const btnAdicionarSetor = document.querySelector('.btn-primary');
-    if (btnAdicionarSetor && btnAdicionarSetor.textContent.includes('Adicionar')) {
-        btnAdicionarSetor.onclick = null;
-        btnAdicionarSetor.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.adicionarSetor();
-        });
-        console.log('✅ Botão adicionar setor configurado');
-    }
-
-    // INPUT SETOR COM ENTER
-    const inputSetor = document.getElementById('novoSetor');
-    if (inputSetor) {
-        inputSetor.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+        // BOTÃO ADICIONAR SETOR - CORRIGIDO
+        const btnAdicionarSetor = document.querySelector('#setores .btn-primary');
+        if (btnAdicionarSetor) {
+            btnAdicionarSetor.onclick = null;
+            btnAdicionarSetor.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.adicionarSetor();
-            }
-        });
-        console.log('✅ Input setor configurado');
-    }
-
-    // BOTÕES DE GESTÃO DE NOTEBOOKS
-    const botoesGestao = {
-        'Adicionar Notebook': () => this.abrirModalAdicionarNotebook(),
-        'Editar Todos em Massa': () => this.abrirModalEdicaoMassa(),
-        'Gerar em Lote': () => this.abrirModalGerarLote(),
-        'Exportar': () => this.exportarNotebooks(),
-        'Importar': () => this.importarNotebooks(),
-        'Resetar': () => this.resetarNotebooks()
-    };
-
-    Object.entries(botoesGestao).forEach(([texto, funcao]) => {
-        const botoes = Array.from(document.querySelectorAll('button')).filter(btn => 
-            btn.textContent.trim().includes(texto)
-        );
-        
-        botoes.forEach(botao => {
-            botao.onclick = null;
-            botao.addEventListener('click', (e) => {
-                e.preventDefault();
-                funcao();
             });
-            console.log(`✅ Botão "${texto}" configurado`);
-        });
-    });
+        }
 
-    // CONFIRMAR ADICIONAR NOTEBOOK
-    const btnConfirmarAdd = document.getElementById('confirmarAdicionarNotebook');
-    if (btnConfirmarAdd) {
-        btnConfirmarAdd.onclick = null;
-        btnConfirmarAdd.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.confirmarAdicionarNotebook();
+        // INPUT SETOR COM ENTER
+        const inputSetor = document.getElementById('novoSetor');
+        if (inputSetor) {
+            inputSetor.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.adicionarSetor();
+                }
+            });
+        }
+
+        // NAVEGAÇÃO DO CALENDÁRIO
+        const prevMonth = document.getElementById('prevMonth');
+        const nextMonth = document.getElementById('nextMonth');
+        
+        if (prevMonth) {
+            prevMonth.addEventListener('click', () => {
+                this.currentMonth.setMonth(this.currentMonth.getMonth() - 1);
+                this.renderCalendario();
+            });
+        }
+        
+        if (nextMonth) {
+            nextMonth.addEventListener('click', () => {
+                this.currentMonth.setMonth(this.currentMonth.getMonth() + 1);
+                this.renderCalendario();
+            });
+        }
+
+        // BOTÕES DE GESTÃO DE NOTEBOOKS
+        const botoesGestao = [
+            { texto: 'Adicionar Notebook', funcao: () => this.abrirModalAdicionarNotebook() },
+            { texto: 'Editar Todos em Massa', funcao: () => this.abrirModalEdicaoMassa() },
+            { texto: 'Gerar em Lote', funcao: () => this.abrirModalGerarLote() },
+            { texto: 'Exportar', funcao: () => this.exportarNotebooks() },
+            { texto: 'Importar', funcao: () => this.importarNotebooks() },
+            { texto: 'Resetar', funcao: () => this.resetarNotebooks() }
+        ];
+
+        botoesGestao.forEach(({ texto, funcao }) => {
+            const botoes = Array.from(document.querySelectorAll('button')).filter(btn => 
+                btn.textContent.trim().includes(texto)
+            );
+            
+            botoes.forEach(botao => {
+                botao.onclick = null;
+                botao.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    funcao();
+                });
+            });
         });
-        console.log('✅ Botão confirmar adicionar notebook configurado');
+
+        console.log('✅ Event listeners configurados');
     }
-
-    // MODAIS
-    document.querySelectorAll('.modal-close').forEach(btn => {
-        btn.addEventListener('click', () => this.closeModal());
-    });
-
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) {
-            this.closeModal();
-        }
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            this.closeModal();
-        }
-    });
-
-    console.log('✅ Todos os event listeners configurados');
-}
-
 
     renderAll() {
-        console.log('🎨 Renderizando interface...');
+        console.log('🎨 Renderizando todas as interfaces...');
         
         try {
             this.renderDashboard();
@@ -1608,27 +1590,28 @@ class SistemaEmprestimos {
             this.updateNotebookOptions();
             this.updateSetorOptions();
             
-            console.log('✅ Interface renderizada com sucesso');
+            console.log('✅ Todas as interfaces renderizadas');
         } catch (error) {
-            console.error('❌ Erro ao renderizar interface:', error);
+            console.error('❌ Erro ao renderizar:', error);
         }
     }
 
+    // CORRIGIR: Dashboard - Mostrar todos os 15 notebooks
     renderDashboard() {
+        console.log('🎨 Renderizando dashboard...');
+        
         const container = document.getElementById('notebooksContainer');
         if (!container) {
             console.error('❌ Container notebooksContainer não encontrado!');
             return;
         }
 
-        console.log(`🎨 Renderizando ${this.notebooks.length} notebooks...`);
-
-        if (this.notebooks.length === 0) {
+        if (!this.notebooks || this.notebooks.length === 0) {
             container.innerHTML = `
-                <div style="text-align: center; padding: 40px; opacity: 0.7;">
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: var(--dark-gray); border-radius: 12px;">
                     <i class="fas fa-laptop" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
-                    <p>Nenhum notebook encontrado</p>
-                    <button class="btn-primary" onclick="sistema.criarNotebooksDefault()">
+                    <p>Carregando notebooks...</p>
+                    <button class="btn-primary" onclick="sistema.createDefaultData(); sistema.renderAll();">
                         Criar Notebooks Padrão
                     </button>
                 </div>
@@ -1636,6 +1619,7 @@ class SistemaEmprestimos {
             return;
         }
 
+        // Renderizar TODOS os notebooks
         container.innerHTML = this.notebooks.map(notebook => {
             const isAtrasado = notebook.status === 'emprestado' && this.isAtrasado(notebook.previsaoDevolucao);
             
@@ -1670,6 +1654,8 @@ class SistemaEmprestimos {
 
         // Renderizar empréstimos ativos
         this.renderEmprestimosAtivos();
+        
+        console.log(`✅ Dashboard renderizado com ${this.notebooks.length} notebooks`);
     }
 
     renderEmprestimosAtivos() {
@@ -1716,540 +1702,353 @@ class SistemaEmprestimos {
         }
     }
 
+    // CORRIGIR: Nova Solicitação - Processar formulário
     async criarSolicitacao() {
-    console.log('📝 Criando nova solicitação...');
+        console.log('📝 Processando nova solicitação...');
 
-    // Buscar dados do formulário
-    const formData = {
-        nome: document.getElementById('nomeColaborador')?.value.trim(),
-        setor: document.getElementById('setorColaborador')?.value,
-        notebookId: parseInt(document.getElementById('notebookSelecionado')?.value),
-        chamado: document.getElementById('numeroChamado')?.value.trim(),
-        motivo: document.getElementById('motivoEmprestimo')?.value.trim(),
-        previsaoDevolucao: document.getElementById('dataPrevisaoDevolucao')?.value
-    };
+        // Buscar dados do formulário
+        const nome = document.getElementById('nomeColaborador')?.value?.trim();
+        const setor = document.getElementById('setorColaborador')?.value;
+        const notebookId = parseInt(document.getElementById('notebookSelecionado')?.value);
+        const chamado = document.getElementById('numeroChamado')?.value?.trim();
+        const motivo = document.getElementById('motivoEmprestimo')?.value?.trim();
+        const previsaoDevolucao = document.getElementById('dataPrevisaoDevolucao')?.value;
 
-    console.log('📋 Dados do formulário:', formData);
+        console.log('📋 Dados capturados:', { nome, setor, notebookId, chamado, motivo, previsaoDevolucao });
 
-    // Validações detalhadas
-    if (!formData.nome) {
-        this.showToast('Nome do colaborador é obrigatório!', 'error');
-        document.getElementById('nomeColaborador')?.focus();
-        return;
-    }
-
-    if (formData.nome.length < 2) {
-        this.showToast('Nome deve ter pelo menos 2 caracteres!', 'error');
-        document.getElementById('nomeColaborador')?.focus();
-        return;
-    }
-
-    if (!formData.setor) {
-        this.showToast('Setor é obrigatório!', 'error');
-        document.getElementById('setorColaborador')?.focus();
-        return;
-    }
-
-    if (!formData.notebookId || isNaN(formData.notebookId)) {
-        this.showToast('Selecione um notebook!', 'error');
-        document.getElementById('notebookSelecionado')?.focus();
-        return;
-    }
-
-    if (!formData.chamado) {
-        this.showToast('Número do chamado é obrigatório!', 'error');
-        document.getElementById('numeroChamado')?.focus();
-        return;
-    }
-
-    if (formData.chamado.length < 3) {
-        this.showToast('Número do chamado deve ter pelo menos 3 caracteres!', 'error');
-        document.getElementById('numeroChamado')?.focus();
-        return;
-    }
-
-    if (!formData.motivo) {
-        this.showToast('Motivo do empréstimo é obrigatório!', 'error');
-        document.getElementById('motivoEmprestimo')?.focus();
-        return;
-    }
-
-    if (formData.motivo.length < 10) {
-        this.showToast('Motivo deve ter pelo menos 10 caracteres!', 'error');
-        document.getElementById('motivoEmprestimo')?.focus();
-        return;
-    }
-
-    if (!formData.previsaoDevolucao) {
-        this.showToast('Data de previsão de devolução é obrigatória!', 'error');
-        document.getElementById('dataPrevisaoDevolucao')?.focus();
-        return;
-    }
-
-    // Verificar se a data não é no passado
-    const hoje = new Date();
-    const previsao = new Date(formData.previsaoDevolucao);
-    if (previsao <= hoje) {
-        this.showToast('Data de devolução deve ser no futuro!', 'error');
-        document.getElementById('dataPrevisaoDevolucao')?.focus();
-        return;
-    }
-
-    // Encontrar notebook selecionado
-    const notebookSelecionado = this.notebooks.find(nb => nb.id === formData.notebookId);
-    
-    if (!notebookSelecionado) {
-        this.showToast('Notebook não encontrado!', 'error');
-        this.updateNotebookOptions(); // Atualizar lista
-        return;
-    }
-
-    if (notebookSelecionado.status !== 'disponivel') {
-        this.showToast('O notebook selecionado não está mais disponível!', 'error');
-        this.updateNotebookOptions(); // Atualizar lista
-        return;
-    }
-
-    try {
-        console.log('💾 Processando empréstimo...');
-        
-        const agora = new Date().toISOString();
-        const emprestimoId = Date.now();
-        
-        // Criar objeto empréstimo
-        const novoEmprestimo = {
-            id: emprestimoId,
-            notebookId: notebookSelecionado.id,
-            colaborador: formData.nome,
-            setor: formData.setor,
-            chamado: formData.chamado,
-            motivo: formData.motivo,
-            dataEntrega: agora,
-            previsaoDevolucao: formData.previsaoDevolucao,
-            status: 'ativo',
-            dataCriacao: agora
-        };
-
-        // Adicionar empréstimo ao array
-        this.emprestimos.push(novoEmprestimo);
-
-        // Atualizar notebook para status emprestado
-        notebookSelecionado.status = 'emprestado';
-        notebookSelecionado.colaborador = formData.nome;
-        notebookSelecionado.setor = formData.setor;
-        notebookSelecionado.chamado = formData.chamado;
-        notebookSelecionado.dataEntrega = agora;
-        notebookSelecionado.previsaoDevolucao = formData.previsaoDevolucao;
-
-        // Salvar no Firebase
-        await this.saveToFirebase();
-
-        // Limpar formulário
-        const form = document.getElementById('formSolicitacao');
-        if (form) {
-            form.reset();
+        // Validações
+        if (!nome || nome.length < 2) {
+            this.showToast('Nome do colaborador deve ter pelo menos 2 caracteres!', 'error');
+            return;
         }
 
-        // Atualizar data mínima
-        this.setMinDate();
+        if (!setor) {
+            this.showToast('Selecione um setor!', 'error');
+            return;
+        }
 
-        // Atualizar todas as interfaces
-        this.renderAll();
+        if (!notebookId || isNaN(notebookId)) {
+            this.showToast('Selecione um notebook!', 'error');
+            return;
+        }
 
-        // Mostrar sucesso
-        this.showToast(`✅ Notebook ${notebookSelecionado.numero} emprestado com sucesso para ${formData.nome}!`, 'success');
-        
-        // Voltar para dashboard
-        this.switchTab('dashboard');
+        if (!chamado || chamado.length < 3) {
+            this.showToast('Número do chamado deve ter pelo menos 3 caracteres!', 'error');
+            return;
+        }
 
-        console.log('✅ Empréstimo criado com sucesso:', novoEmprestimo);
-        
-    } catch (error) {
-        console.error('❌ Erro ao criar empréstimo:', error);
-        this.showToast('Erro ao processar empréstimo. Tente novamente.', 'error');
-        
-        // Reverter mudanças em caso de erro
-        this.emprestimos = this.emprestimos.filter(emp => emp.id !== emprestimoId);
-        if (notebookSelecionado) {
-            notebookSelecionado.status = 'disponivel';
-            notebookSelecionado.colaborador = null;
-            notebookSelecionado.setor = null;
-            notebookSelecionado.chamado = null;
-            notebookSelecionado.dataEntrega = null;
-            notebookSelecionado.previsaoDevolucao = null;
+        if (!motivo || motivo.length < 3) {
+            this.showToast('Motivo deve ter pelo menos 3 caracteres!', 'error');
+            return;
+        }
+
+        if (!previsaoDevolucao) {
+            this.showToast('Selecione a data de devolução!', 'error');
+            return;
+        }
+
+        // Encontrar notebook
+        const notebook = this.notebooks.find(nb => nb.id === notebookId);
+        if (!notebook || notebook.status !== 'disponivel') {
+            this.showToast('Notebook selecionado não está disponível!', 'error');
+            this.updateNotebookOptions();
+            return;
+        }
+
+        try {
+            console.log('💾 Criando empréstimo...');
+            
+            const agora = new Date().toISOString();
+            const emprestimoId = Date.now();
+            
+            // Criar empréstimo
+            const novoEmprestimo = {
+                id: emprestimoId,
+                notebookId: notebook.id,
+                colaborador: nome,
+                setor: setor,
+                chamado: chamado,
+                motivo: motivo,
+                dataEntrega: agora,
+                previsaoDevolucao: previsaoDevolucao,
+                status: 'ativo'
+            };
+
+            // Atualizar notebook
+            notebook.status = 'emprestado';
+            notebook.colaborador = nome;
+            notebook.setor = setor;
+            notebook.chamado = chamado;
+            notebook.dataEntrega = agora;
+            notebook.previsaoDevolucao = previsaoDevolucao;
+
+            // Adicionar empréstimo
+            this.emprestimos.push(novoEmprestimo);
+
+            // Salvar no Firebase
+            await this.saveToFirebase();
+
+            // Limpar formulário
+            document.getElementById('formSolicitacao').reset();
+            this.setMinDate();
+
+            // Atualizar interface
+            this.renderAll();
+
+            this.showToast(`✅ Notebook ${notebook.numero} emprestado para ${nome}!`, 'success');
+            this.switchTab('dashboard');
+
+            console.log('✅ Empréstimo criado com sucesso!');
+            
+        } catch (error) {
+            console.error('❌ Erro ao criar empréstimo:', error);
+            this.showToast('Erro ao processar empréstimo. Tente novamente.', 'error');
         }
     }
-}
 
+    // CORRIGIR: Calendário - Renderização completa
+    renderCalendario() {
+        console.log('📅 Renderizando calendário...');
+        
+        const calendar = document.getElementById('calendar');
+        const monthYear = document.getElementById('monthYear');
+        
+        if (!calendar || !monthYear) {
+            console.error('❌ Elementos do calendário não encontrados');
+            return;
+        }
 
+        const year = this.currentMonth.getFullYear();
+        const month = this.currentMonth.getMonth();
+        
+        // Atualizar título
+        monthYear.textContent = new Date(year, month).toLocaleDateString('pt-BR', {
+            month: 'long',
+            year: 'numeric'
+        });
+
+        // Calcular datas
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+        // Gerar HTML do calendário
+        let calendarHTML = '<div class="calendar-header">';
+        const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        weekDays.forEach(day => {
+            calendarHTML += `<div class="calendar-day-header">${day}</div>`;
+        });
+        calendarHTML += '</div><div class="calendar-body">';
+
+        // Gerar 42 dias (6 semanas)
+        for (let i = 0; i < 42; i++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + i);
+            
+            const isCurrentMonth = currentDate.getMonth() === month;
+            const isToday = currentDate.toDateString() === new Date().toDateString();
+            
+            // Encontrar empréstimos para esta data
+            const emprestimosNaData = this.emprestimos.filter(emp => {
+                if (emp.status !== 'ativo') return false;
+                const previsaoData = new Date(emp.previsaoDevolucao);
+                return previsaoData.toDateString() === currentDate.toDateString();
+            });
+
+            let dayClass = 'calendar-day';
+            if (!isCurrentMonth) dayClass += ' other-month';
+            if (isToday) dayClass += ' today';
+            if (emprestimosNaData.length > 0) dayClass += ' has-emprestimos';
+
+            calendarHTML += `
+                <div class="${dayClass}" onclick="sistema.mostrarEmprestimosData('${currentDate.toISOString()}')">
+                    <span class="day-number">${currentDate.getDate()}</span>
+                    ${emprestimosNaData.length > 0 ? `<span class="emprestimos-count">${emprestimosNaData.length}</span>` : ''}
+                </div>
+            `;
+        }
+
+        calendarHTML += '</div>';
+        calendar.innerHTML = calendarHTML;
+        
+        console.log('✅ Calendário renderizado');
+    }
+
+    // CORRIGIR: Setores - Renderização e gestão
     renderSetores() {
+        console.log('🏢 Renderizando setores...');
+        
         const container = document.getElementById('setoresList');
         if (!container) {
             console.error('❌ Container setoresList não encontrado!');
             return;
         }
 
-        console.log(`🏢 Renderizando ${this.setores.length} setores...`);
-
-        if (this.setores.length === 0) {
+        if (!this.setores || this.setores.length === 0) {
             container.innerHTML = `
-                <div style="text-align: center; padding: 20px; opacity: 0.7;">
+                <div style="text-align: center; padding: 20px; background: var(--dark-gray); border-radius: 8px; opacity: 0.7;">
                     <p>Nenhum setor cadastrado</p>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = this.setores.map(setor => `
-            <div class="setor-item">
-                <span>${setor}</span>
-                <button class="btn-danger btn-small" onclick="sistema.removerSetor('${setor}')">
+        container.innerHTML = this.setores.map((setor, index) => `
+            <div class="setor-item" style="background: var(--dark-gray); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary-orange);">
+                <span style="color: var(--white); font-weight: 500;">${setor}</span>
+                <button class="btn-danger btn-small" onclick="sistema.removerSetor(${index})">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
         `).join('');
+
+        console.log(`✅ ${this.setores.length} setores renderizados`);
     }
-
-    abrirModalAdicionarNotebook() {
-    console.log('📱 Abrindo modal adicionar notebook...');
-    
-    const modal = document.getElementById('modalAdicionarNotebook');
-    if (!modal) {
-        console.error('❌ Modal modalAdicionarNotebook não encontrado!');
-        this.showToast('Modal de adicionar notebook não encontrado', 'error');
-        return;
-    }
-
-    // Limpar todos os campos
-    const campos = [
-        'novoNotebookNumero',
-        'novoNotebookSerie', 
-        'novoNotebookRfid',
-        'novoNotebookModelo',
-        'novoNotebookProcessador',
-        'novoNotebookMemoria',
-        'novoNotebookDescricao'
-    ];
-
-    campos.forEach(campo => {
-        const input = document.getElementById(campo);
-        if (input) input.value = '';
-    });
-
-    // Gerar valores automáticos
-    const proximoNumero = this.gerarProximoNumero();
-    const proximaSerie = this.gerarProximaSerie();
-    const proximoRfid = this.gerarProximoRfid();
-
-    const numeroInput = document.getElementById('novoNotebookNumero');
-    const serieInput = document.getElementById('novoNotebookSerie');
-    const rfidInput = document.getElementById('novoNotebookRfid');
-
-    if (numeroInput) numeroInput.value = proximoNumero;
-    if (serieInput) serieInput.value = proximaSerie;
-    if (rfidInput) rfidInput.value = proximoRfid;
-
-    modal.classList.add('active');
-    console.log('✅ Modal adicionar notebook aberto');
-}
-
-gerarProximoNumero() {
-    const ultimoId = this.notebooks.length > 0 ? Math.max(...this.notebooks.map(nb => nb.id)) : 0;
-    return `EMPRESTIMO_${(ultimoId + 1).toString().padStart(2, '0')}`;
-}
-
-gerarProximaSerie() {
-    return `${Math.floor(Math.random() * 9000) + 1000}DD3`;
-}
-
-gerarProximoRfid() {
-    const ultimoRfid = this.notebooks.length > 0 ? 
-        Math.max(...this.notebooks.map(nb => parseInt(nb.rfid.replace('RF', '') || '200794'))) : 200794;
-    return `${ultimoRfid + 1}`;
-}
-
-async confirmarAdicionarNotebook() {
-    console.log('💾 Confirmando adição de notebook...');
-
-    const campos = {
-        numero: document.getElementById('novoNotebookNumero')?.value.trim(),
-        serie: document.getElementById('novoNotebookSerie')?.value.trim(),
-        rfid: document.getElementById('novoNotebookRfid')?.value.trim(),
-        modelo: document.getElementById('novoNotebookModelo')?.value.trim(),
-        processador: document.getElementById('novoNotebookProcessador')?.value.trim(),
-        memoria: document.getElementById('novoNotebookMemoria')?.value.trim(),
-        descricao: document.getElementById('novoNotebookDescricao')?.value.trim()
-    };
-
-    // Validações
-    if (!campos.numero || !campos.serie || !campos.rfid) {
-        this.showToast('Número, Série e RFID são obrigatórios!', 'error');
-        return;
-    }
-
-    // Verificar duplicatas
-    const numeroExiste = this.notebooks.some(nb => nb.numero === campos.numero);
-    const rfidExiste = this.notebooks.some(nb => nb.rfid === campos.rfid);
-
-    if (numeroExiste) {
-        this.showToast('Já existe um notebook com este número!', 'error');
-        return;
-    }
-
-    if (rfidExiste) {
-        this.showToast('Já existe um notebook com este RFID!', 'error');
-        return;
-    }
-
-    try {
-        const proximoId = this.notebooks.length > 0 ? Math.max(...this.notebooks.map(nb => nb.id)) + 1 : 1;
-        
-        const novoNotebook = {
-            id: proximoId,
-            numero: campos.numero,
-            serie: campos.serie,
-            rfid: campos.rfid,
-            modelo: campos.modelo,
-            processador: campos.processador,
-            memoria: campos.memoria,
-            descricao: campos.descricao,
-            dataCadastro: new Date().toISOString(),
-            status: 'disponivel',
-            colaborador: null,
-            setor: null,
-            chamado: null,
-            dataEntrega: null,
-            previsaoDevolucao: null
-        };
-
-        // Adicionar ao array local
-        this.notebooks.push(novoNotebook);
-        
-        // Salvar no Firebase
-        await this.saveToFirebase();
-
-        // Fechar modal
-        this.closeModal();
-        
-        // Atualizar todas as interfaces
-        this.renderAll();
-
-        this.showToast(`✅ Notebook ${campos.numero} adicionado com sucesso!`, 'success');
-        
-        console.log('✅ Notebook adicionado:', novoNotebook);
-        
-    } catch (error) {
-        console.error('❌ Erro ao adicionar notebook:', error);
-        // Reverter mudança em caso de erro
-        this.notebooks = this.notebooks.filter(nb => nb.numero !== campos.numero);
-        this.showToast('Erro ao salvar notebook. Tente novamente.', 'error');
-    }
-}
-
 
     renderListaNotebooksEdicao() {
-    const container = document.getElementById('notebooksEdicaoContainer');
-    if (!container) {
-        console.error('❌ Container notebooksEdicaoContainer não encontrado!');
-        return;
-    }
+        console.log('📱 Renderizando lista de notebooks para edição...');
+        
+        const container = document.getElementById('notebooksEdicaoContainer');
+        if (!container) {
+            console.error('❌ Container notebooksEdicaoContainer não encontrado!');
+            return;
+        }
 
-    console.log(`🎨 Renderizando lista de edição: ${this.notebooks.length} notebooks`);
+        if (!this.notebooks || this.notebooks.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; background: var(--dark-gray); border-radius: 12px;">
+                    <i class="fas fa-laptop" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
+                    <p>Nenhum notebook cadastrado</p>
+                </div>
+            `;
+            return;
+        }
 
-    if (!this.notebooks || this.notebooks.length === 0) {
-        container.innerHTML = `
-            <div style="text-align: center; padding: 40px; background: var(--dark-gray); border-radius: 12px; margin: 20px 0;">
-                <i class="fas fa-laptop" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
-                <p>Nenhum notebook cadastrado</p>
-                <button class="btn-primary" onclick="sistema.criarNotebooksDefault()">
-                    <i class="fas fa-plus"></i> Criar Notebooks Padrão
-                </button>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = this.notebooks.map(notebook => `
-        <div class="notebook-edicao-item" style="background: var(--dark-gray); border-radius: 8px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--primary-orange);">
-            <div class="notebook-edicao-info">
+        container.innerHTML = this.notebooks.map(notebook => `
+            <div class="notebook-edicao-item" style="background: var(--dark-gray); border-radius: 8px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--primary-orange);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <strong style="color: var(--primary-orange); font-size: 1.1rem;">${notebook.numero}</strong>
                         <span style="margin-left: 10px; color: #ccc;">Série: ${notebook.serie}</span>
                         <span style="margin-left: 10px; color: #ccc;">RFID: ${notebook.rfid}</span>
                     </div>
-                    <div class="notebook-edicao-actions">
+                    <div>
                         <button class="btn-secondary btn-small" onclick="sistema.editarNotebook(${notebook.id})" style="margin-right: 5px;">
                             <i class="fas fa-edit"></i> Editar
-                        </button>
-                        <button class="btn-danger btn-small" onclick="sistema.excluirNotebook(${notebook.id})">
-                            <i class="fas fa-trash"></i> Excluir
                         </button>
                     </div>
                 </div>
                 <div style="margin-top: 8px; font-size: 0.9rem; color: #aaa;">
-                    <div>Modelo: ${notebook.modelo || 'Não informado'}</div>
                     <div>Status: <span class="status-badge status-${notebook.status}">${notebook.status === 'disponivel' ? 'Disponível' : 'Em Uso'}</span></div>
                     ${notebook.colaborador ? `<div>Emprestado para: <strong>${notebook.colaborador}</strong> (${notebook.setor})</div>` : ''}
                 </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
 
-    console.log('✅ Lista de notebooks para edição renderizada');
-}
+        console.log(`✅ Lista de ${this.notebooks.length} notebooks para edição renderizada`);
+    }
+
+    renderHistorico() {
+        console.log('📜 Renderizando histórico...');
+        
+        const tbody = document.getElementById('historicoTableBody');
+        if (!tbody) return;
+
+        if (!this.emprestimos || this.emprestimos.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; opacity: 0.7;">
+                        Nenhum empréstimo registrado
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        // Aplicar filtros
+        const filtroNome = document.getElementById('filtroNome')?.value?.toLowerCase() || '';
+        const filtroSetor = document.getElementById('filtroSetor')?.value || '';
+        const filtroMes = document.getElementById('filtroMes')?.value || '';
+
+        let historicoFiltrado = [...this.emprestimos];
+
+        if (filtroNome) {
+            historicoFiltrado = historicoFiltrado.filter(emp => 
+                emp.colaborador.toLowerCase().includes(filtroNome)
+            );
+        }
+
+        if (filtroSetor) {
+            historicoFiltrado = historicoFiltrado.filter(emp => emp.setor === filtroSetor);
+        }
+
+        if (filtroMes) {
+            historicoFiltrado = historicoFiltrado.filter(emp => {
+                const dataEntrega = new Date(emp.dataEntrega);
+                const mesAno = `${dataEntrega.getFullYear()}-${(dataEntrega.getMonth() + 1).toString().padStart(2, '0')}`;
+                return mesAno === filtroMes;
+            });
+        }
+
+        // Ordenar por data mais recente
+        historicoFiltrado.sort((a, b) => new Date(b.dataEntrega) - new Date(a.dataEntrega));
+
+        tbody.innerHTML = historicoFiltrado.map(emprestimo => {
+            const notebook = this.notebooks.find(nb => nb.id === emprestimo.notebookId);
+            let statusClass = 'status-ativo';
+            let statusText = 'Ativo';
+            
+            if (emprestimo.status === 'devolvido') {
+                statusClass = 'status-devolvido';
+                statusText = 'Devolvido';
+            } else if (emprestimo.status === 'ativo') {
+                const previsao = new Date(emprestimo.previsaoDevolucao);
+                const hoje = new Date();
+                if (previsao < hoje) {
+                    statusClass = 'status-atrasado';
+                    statusText = 'Atrasado';
+                }
+            }
+
+            return `
+                <tr onclick="sistema.mostrarDetalhesEmprestimo(${emprestimo.id})" style="cursor: pointer;">
+                    <td><strong>${notebook ? notebook.numero : 'N/A'}</strong></td>
+                    <td>${emprestimo.colaborador}</td>
+                    <td>${emprestimo.setor}</td>
+                    <td>${emprestimo.chamado}</td>
+                    <td>${this.formatDateTime(emprestimo.dataEntrega)}</td>
+                    <td>${emprestimo.dataDevolucao ? this.formatDateTime(emprestimo.dataDevolucao) : '-'}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                </tr>
+            `;
+        }).join('');
+    }
 
     updateStats() {
         const disponiveisCount = this.notebooks.filter(nb => nb.status === 'disponivel').length;
         const emprestadosCount = this.notebooks.filter(nb => nb.status === 'emprestado').length;
         const totalCount = this.notebooks.length;
         
-        // Atualizar contadores do header
+        // Atualizar header
         const disponiveisEl = document.getElementById('disponiveisCount');
         const emprestadosEl = document.getElementById('emprestadosCount');
         
         if (disponiveisEl) disponiveisEl.textContent = disponiveisCount;
         if (emprestadosEl) emprestadosEl.textContent = emprestadosCount;
         
-        // Atualizar stats da seção gestão
-        const elementos = {
-            'totalNotebooks': totalCount,
-            'disponiveis': disponiveisCount,
-            'emUso': emprestadosCount
-        };
-
-        Object.entries(elementos).forEach(([id, valor]) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = valor;
-        });
-
-        console.log('📊 Stats atualizadas:', { total: totalCount, disponiveisCount, emprestadosCount });
-    }
-
-    async adicionarSetor() {
-        const input = document.getElementById('novoSetor');
-        if (!input) {
-            console.error('❌ Input novoSetor não encontrado!');
-            this.showToast('Elemento de input não encontrado', 'error');
-            return;
-        }
+        // Atualizar seção gestão
+        const totalEl = document.getElementById('totalNotebooks');
+        const disponiveisExtraEl = document.getElementById('disponiveis');
+        const emUsoEl = document.getElementById('emUso');
         
-        const novoSetor = input.value.trim();
+        if (totalEl) totalEl.textContent = totalCount;
+        if (disponiveisExtraEl) disponiveisExtraEl.textContent = disponiveisCount;
+        if (emUsoEl) emUsoEl.textContent = emprestadosCount;
 
-        // Validações
-        if (!novoSetor) {
-            this.showToast('Digite o nome do setor!', 'error');
-            input.focus();
-            return;
-        }
-
-        if (novoSetor.length < 2) {
-            this.showToast('Nome do setor deve ter pelo menos 2 caracteres!', 'error');
-            input.focus();
-            return;
-        }
-
-        if (this.setores.some(setor => setor.toLowerCase() === novoSetor.toLowerCase())) {
-            this.showToast('Este setor já existe!', 'warning');
-            input.focus();
-            return;
-        }
-
-        try {
-            console.log('➕ Adicionando setor:', novoSetor);
-            
-            // Adicionar ao array local
-            this.setores.push(novoSetor);
-            
-            // Salvar no Firebase
-            await this.saveToFirebase();
-            
-            // Limpar input
-            input.value = '';
-            
-            // Atualizar interface
-            this.renderSetores();
-            this.updateSetorOptions();
-            
-            this.showToast(`✅ Setor "${novoSetor}" adicionado com sucesso!`, 'success');
-            
-            console.log('✅ Setor adicionado com sucesso. Total:', this.setores.length);
-            
-        } catch (error) {
-            console.error('❌ Erro ao adicionar setor:', error);
-            // Reverter mudança local em caso de erro
-            this.setores = this.setores.filter(s => s !== novoSetor);
-            this.showToast('Erro ao salvar setor. Tente novamente.', 'error');
-        }
+        console.log(`📊 Stats: ${totalCount} total, ${disponiveisCount} disponíveis, ${emprestadosCount} em uso`);
     }
 
-    async removerSetor(setor) {
-        if (!confirm(`Tem certeza que deseja remover o setor "${setor}"?`)) {
-            return;
-        }
-
-        try {
-            console.log('🗑️ Removendo setor:', setor);
-            
-            // Remover do array local
-            this.setores = this.setores.filter(s => s !== setor);
-            
-            // Salvar no Firebase
-            await this.saveToFirebase();
-            
-            // Atualizar interface
-            this.renderSetores();
-            this.updateSetorOptions();
-            
-            this.showToast(`✅ Setor "${setor}" removido com sucesso!`, 'success');
-            
-        } catch (error) {
-            console.error('❌ Erro ao remover setor:', error);
-            this.showToast('Erro ao remover setor. Tente novamente.', 'error');
-        }
-    }
-
-    async saveToFirebase() {
-        try {
-            console.log('💾 Salvando dados no Firebase...');
-            
-            const promises = [];
-            
-            if (this.notebooks.length > 0) {
-                promises.push(this.dbNotebooks.set(this.notebooks));
-            }
-            
-            if (this.emprestimos.length > 0) {
-                promises.push(this.dbEmprestimos.set(this.emprestimos));
-            }
-            
-            if (this.setores.length > 0) {
-                promises.push(this.dbSetores.set(this.setores));
-            }
-            
-            await Promise.all(promises);
-            
-            console.log('✅ Dados salvos no Firebase com sucesso!');
-            
-        } catch (error) {
-            console.error('❌ Erro ao salvar no Firebase:', error);
-            throw error;
-        }
-    }
-
-    async criarNotebooksDefault() {
-        try {
-            this.notebooks = this.createDefaultNotebooks();
-            await this.saveToFirebase();
-            this.renderAll();
-            this.showToast('✅ 15 notebooks criados com sucesso!', 'success');
-        } catch (error) {
-            console.error('❌ Erro ao criar notebooks:', error);
-            this.showToast('Erro ao criar notebooks', 'error');
-        }
-    }
-
-    // Funções auxiliares (manter as originais)
     updateNotebookOptions() {
         const select = document.getElementById('notebookSelecionado');
         if (!select) return;
@@ -2293,6 +2092,76 @@ async confirmarAdicionarNotebook() {
         });
     }
 
+    async adicionarSetor() {
+        const input = document.getElementById('novoSetor');
+        if (!input) return;
+        
+        const novoSetor = input.value.trim();
+
+        if (!novoSetor) {
+            this.showToast('Digite o nome do setor!', 'error');
+            return;
+        }
+
+        if (this.setores.includes(novoSetor)) {
+            this.showToast('Este setor já existe!', 'warning');
+            return;
+        }
+
+        try {
+            this.setores.push(novoSetor);
+            await this.saveToFirebase();
+            
+            input.value = '';
+            this.renderSetores();
+            this.updateSetorOptions();
+            
+            this.showToast(`✅ Setor "${novoSetor}" adicionado!`, 'success');
+            
+        } catch (error) {
+            console.error('❌ Erro ao adicionar setor:', error);
+            this.setores = this.setores.filter(s => s !== novoSetor);
+            this.showToast('Erro ao salvar setor', 'error');
+        }
+    }
+
+    async removerSetor(index) {
+        const setor = this.setores[index];
+        if (!confirm(`Remover o setor "${setor}"?`)) return;
+
+        try {
+            this.setores.splice(index, 1);
+            await this.saveToFirebase();
+            
+            this.renderSetores();
+            this.updateSetorOptions();
+            
+            this.showToast(`✅ Setor "${setor}" removido!`, 'success');
+            
+        } catch (error) {
+            console.error('❌ Erro ao remover setor:', error);
+            this.showToast('Erro ao remover setor', 'error');
+        }
+    }
+
+    async saveToFirebase() {
+        try {
+            console.log('💾 Salvando no Firebase...');
+            
+            await Promise.all([
+                this.dbNotebooks.set(this.notebooks),
+                this.dbEmprestimos.set(this.emprestimos),
+                this.dbSetores.set(this.setores)
+            ]);
+            
+            console.log('✅ Dados salvos no Firebase');
+            
+        } catch (error) {
+            console.error('❌ Erro ao salvar no Firebase:', error);
+            throw error;
+        }
+    }
+
     switchTab(tabName) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -2300,47 +2169,106 @@ async confirmarAdicionarNotebook() {
         document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
         document.getElementById(tabName).classList.add('active');
 
-        // Renderizar dados específicos da aba
-        switch(tabName) {
-            case 'dashboard':
-                this.renderDashboard();
-                break;
-            case 'calendario':
-                this.renderCalendario();
-                break;
-            case 'solicitar':
-                this.updateNotebookOptions();
-                break;
-            case 'historico':
-                this.renderHistorico();
-                break;
-            case 'setores':
-                this.renderSetores();
-                this.renderListaNotebooksEdicao();
-                break;
+        // Renderizar conteúdo específico da aba
+        setTimeout(() => {
+            switch(tabName) {
+                case 'dashboard':
+                    this.renderDashboard();
+                    break;
+                case 'calendario':
+                    this.renderCalendario();
+                    break;
+                case 'solicitar':
+                    this.updateNotebookOptions();
+                    break;
+                case 'historico':
+                    this.renderHistorico();
+                    break;
+                case 'setores':
+                    this.renderSetores();
+                    this.renderListaNotebooksEdicao();
+                    break;
+            }
+        }, 100);
+    }
+
+    setMinDate() {
+        const hoje = new Date();
+        const amanha = new Date(hoje);
+        amanha.setDate(hoje.getDate() + 1);
+        
+        const minDate = amanha.toISOString().split('T')[0];
+        
+        const dateInput = document.getElementById('dataPrevisaoDevolucao');
+        if (dateInput) {
+            dateInput.min = minDate;
         }
     }
 
-    // Placeholder para outras funções (implementar conforme necessário)
-    renderCalendario() { console.log('📅 Renderizar calendário'); }
-    renderHistorico() { console.log('📜 Renderizar histórico'); }
-    setMinDate() { console.log('📅 Definir data mínima'); }
-    closeModal() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
-    abrirModalAdicionarNotebook() { console.log('➕ Abrir modal adicionar notebook'); }
-    abrirModalEdicaoMassa() { console.log('✏️ Abrir modal edição em massa'); }
-    abrirModalGerarLote() { console.log('🔢 Abrir modal gerar lote'); }
-    exportarNotebooks() { console.log('📤 Exportar notebooks'); }
-    importarNotebooks() { console.log('📥 Importar notebooks'); }
-    resetarNotebooks() { if(confirm('Resetar todos os notebooks?')) { this.notebooks = []; this.saveToFirebase(); this.renderAll(); } }
-    criarSolicitacao() { console.log('📝 Criar solicitação'); }
-    mostrarDetalhesNotebook(id) { console.log('👁️ Mostrar detalhes notebook:', id); }
-    mostrarDetalhesEmprestimo(id) { console.log('👁️ Mostrar detalhes empréstimo:', id); }
+    // Funções auxiliares
+    mostrarDetalhesNotebook(id) {
+        const notebook = this.notebooks.find(nb => nb.id === id);
+        if (!notebook) return;
+
+        let detalhes = `Notebook: ${notebook.numero}\nSérie: ${notebook.serie}\nRFID: ${notebook.rfid}\nStatus: ${notebook.status}`;
+        if (notebook.colaborador) {
+            detalhes += `\n\nEmprestado para: ${notebook.colaborador}\nSetor: ${notebook.setor}\nChamado: ${notebook.chamado}`;
+        }
+        alert(detalhes);
+    }
+
+    mostrarDetalhesEmprestimo(id) {
+        const emprestimo = this.emprestimos.find(emp => emp.id === id);
+        if (!emprestimo) return;
+
+        const notebook = this.notebooks.find(nb => nb.id === emprestimo.notebookId);
+        
+        let detalhes = `Empréstimo: ${notebook ? notebook.numero : 'N/A'}\nColaborador: ${emprestimo.colaborador}\nSetor: ${emprestimo.setor}\nChamado: ${emprestimo.chamado}\nMotivo: ${emprestimo.motivo}`;
+        alert(detalhes);
+    }
+
+    mostrarEmprestimosData(dataISO) {
+        const data = new Date(dataISO);
+        const emprestimosNaData = this.emprestimos.filter(emp => {
+            if (emp.status !== 'ativo') return false;
+            const previsaoData = new Date(emp.previsaoDevolucao);
+            return previsaoData.toDateString() === data.toDateString();
+        });
+
+        if (emprestimosNaData.length === 0) {
+            alert(`Nenhum empréstimo para ${this.formatDate(data.toISOString())}`);
+            return;
+        }
+
+        let detalhes = `Empréstimos para ${this.formatDate(data.toISOString())}:\n\n`;
+        emprestimosNaData.forEach(emp => {
+            const notebook = this.notebooks.find(nb => nb.id === emp.notebookId);
+            detalhes += `• ${notebook ? notebook.numero : 'N/A'} - ${emp.colaborador} (${emp.setor})\n`;
+        });
+
+        alert(detalhes);
+    }
+
+    // Placeholders para funções futuras
+    abrirModalDevolucao(id) { console.log('🔄 Devolver notebook:', id); }
+    abrirModalAdicionarNotebook() { console.log('➕ Adicionar notebook'); }
+    abrirModalEdicaoMassa() { console.log('✏️ Edição em massa'); }
+    abrirModalGerarLote() { console.log('🔢 Gerar lote'); }
+    exportarNotebooks() { console.log('📤 Exportar'); }
+    importarNotebooks() { console.log('📥 Importar'); }
+    resetarNotebooks() { if(confirm('Resetar notebooks?')) { this.createDefaultData(); this.saveToFirebase(); this.renderAll(); } }
     editarNotebook(id) { console.log('✏️ Editar notebook:', id); }
-    abrirModalDevolucao(id) { console.log('↩️ Abrir modal devolução:', id); }
 
     formatDate(dateString) {
         if (!dateString) return '-';
         return new Date(dateString).toLocaleDateString('pt-BR');
+    }
+
+    formatDateTime(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-BR') + ' às ' + 
+               date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
     }
 
     isAtrasado(previsaoDevolucao) {
@@ -2353,9 +2281,8 @@ async confirmarAdicionarNotebook() {
     }
 
     showToast(message, type = 'success') {
-        console.log(`📢 Toast [${type}]: ${message}`);
+        console.log(`📢 ${type.toUpperCase()}: ${message}`);
         
-        // Remover toasts existentes
         document.querySelectorAll('.toast').forEach(toast => toast.remove());
 
         const toast = document.createElement('div');
@@ -2370,11 +2297,9 @@ async confirmarAdicionarNotebook() {
             color: white;
             font-weight: 600;
             z-index: 1001;
-            animation: slideIn 0.3s ease-out;
             max-width: 300px;
         `;
         
-        // Cores por tipo
         const colors = {
             success: '#4CAF50',
             error: '#F44336',
@@ -2383,38 +2308,14 @@ async confirmarAdicionarNotebook() {
         };
         
         toast.style.backgroundColor = colors[type] || colors.success;
-        
         document.body.appendChild(toast);
         
         setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease-out';
-            setTimeout(() => {
-                if (document.body.contains(toast)) {
-                    document.body.removeChild(toast);
-                }
-            }, 300);
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
         }, 4000);
     }
-}
-
-// CSS para toasts
-const toastCSS = `
-@keyframes slideIn {
-    from { opacity: 0; transform: translateX(100%); }
-    to { opacity: 1; transform: translateX(0); }
-}
-@keyframes slideOut {
-    from { opacity: 1; transform: translateX(0); }
-    to { opacity: 0; transform: translateX(100%); }
-}
-`;
-
-// Adicionar CSS se não existir
-if (!document.querySelector('#toast-styles')) {
-    const style = document.createElement('style');
-    style.id = 'toast-styles';
-    style.textContent = toastCSS;
-    document.head.appendChild(style);
 }
 
 // Inicializar sistema
@@ -2422,24 +2323,8 @@ let sistema;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🌟 DOM carregado, inicializando sistema...');
     sistema = new SistemaEmprestimos();
-    
-    // Debug global
-    window.debugSistema = {
-        notebooks: () => console.table(sistema.notebooks),
-        setores: () => console.table(sistema.setores),
-        adicionarSetor: (nome) => sistema.adicionarSetor(),
-        firebase: () => {
-            firebase.database().ref().once('value').then(snap => {
-                console.log('Firebase completo:', snap.val());
-            });
-        }
-    };
-    
-    console.log('🛠️ Debug disponível: window.debugSistema');
 });
 </script>
-
-
 </body>
 </html>
 

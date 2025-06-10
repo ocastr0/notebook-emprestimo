@@ -839,11 +839,11 @@
 </head>
 <body>
 
-    <h1 id="bigOne"></h1>
+<h1 id="bigOne"></h1>
 
-    <!-- Adicione essas bibliotecas no <head> ou antes do seu script -->
-<script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-database.js"></script>
+<!-- Firebase compat SDKs -->
+<script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-database-compat.js"></script>
 
 <script>
   // Configuração do Firebase
@@ -861,13 +861,16 @@
   // Inicializar Firebase
   firebase.initializeApp(firebaseConfig);
 
+  // Referência ao elemento e ao banco de dados
+  var bigOne = document.getElementById('bigOne');
+  var dbRef = firebase.database().ref().child('isaque');
 
-    var bigOne = document.getElementById('bigOne')
-    var dbRef = firebase.database().ref().child('isaque');
-    dbRef.on('value', snap => bigOne.innerText = snap.val());
+  // Atualiza o conteúdo da tag <h1> sempre que o valor mudar
+  dbRef.on('value', snap => {
+    bigOne.innerText = snap.val();
+  });
+</script>
 
-    
-    </script>
 
 
     <div class="container">

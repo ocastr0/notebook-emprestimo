@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Empréstimos - Notebooks</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-auth-compat.js"></script>
 
     
     <style>
@@ -871,6 +873,78 @@
   });
 </script>
 
+    <!-- Adicionar nova aba Admin -->
+<div class="tab-buttons">
+    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="solicitar">Nova Solicitação</button>
+    <button class="tab-btn" data-tab="calendario">Calendário</button>
+    <button class="tab-btn" data-tab="historico">Histórico</button>
+    <button class="tab-btn" data-tab="setores">Setores</button>
+    <button class="tab-btn" data-tab="admin" id="adminTab" style="display: none;">
+        <i class="fas fa-crown"></i> Admin
+    </button>
+</div>
+
+<!-- Adicionar conteúdo da aba Admin -->
+<div id="admin" class="tab-content">
+    <div style="background: var(--dark-gray); border-radius: 12px; padding: 30px; margin: 20px 0;">
+        <h2 style="color: var(--primary-orange); margin-bottom: 25px; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-crown"></i> Painel de Administração
+        </h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <!-- Gerenciar Usuários -->
+            <div style="background: var(--black); border-radius: 12px; padding: 20px; border: 2px solid var(--primary-orange);">
+                <h3 style="color: var(--primary-orange); margin-bottom: 15px;">
+                    <i class="fas fa-users"></i> Gerenciar Usuários
+                </h3>
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="color: var(--white); display: block; margin-bottom: 8px;">Adicionar Novo Usuário:</label>
+                    <input type="email" id="newUserEmail" placeholder="email@exemplo.com" style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray); border-radius: 6px; background: var(--dark-gray); color: var(--white); margin-bottom: 10px;">
+                    <input type="text" id="newUserName" placeholder="Nome Completo" style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray); border-radius: 6px; background: var(--dark-gray); color: var(--white); margin-bottom: 10px;">
+                    <select id="newUserRole" style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray); border-radius: 6px; background: var(--dark-gray); color: var(--white); margin-bottom: 15px;">
+                        <option value="user">Usuário</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                    <button onclick="sistema.adicionarUsuario()" class="btn-primary" style="width: 100%; padding: 10px;">
+                        <i class="fas fa-user-plus"></i> Adicionar Usuário
+                    </button>
+                </div>
+                
+                <div id="usersList" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Lista de usuários será renderizada aqui -->
+                </div>
+            </div>
+            
+            <!-- Alterar Senha Admin -->
+            <div style="background: var(--black); border-radius: 12px; padding: 20px; border: 2px solid var(--red);">
+                <h3 style="color: var(--red); margin-bottom: 15px;">
+                    <i class="fas fa-key"></i> Alterar Senha Admin
+                </h3>
+                
+                <div class="form-group">
+                    <input type="password" id="currentPassword" placeholder="Senha Atual" style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray); border-radius: 6px; background: var(--dark-gray); color: var(--white); margin-bottom: 10px;">
+                    <input type="password" id="newPassword" placeholder="Nova Senha" style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray); border-radius: 6px; background: var(--dark-gray); color: var(--white); margin-bottom: 10px;">
+                    <input type="password" id="confirmNewPassword" placeholder="Confirmar Nova Senha" style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray); border-radius: 6px; background: var(--dark-gray); color: var(--white); margin-bottom: 15px;">
+                    <button onclick="sistema.alterarSenhaAdmin()" class="btn-danger" style="width: 100%; padding: 10px;">
+                        <i class="fas fa-shield-alt"></i> Alterar Senha
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Logs de Segurança -->
+            <div style="background: var(--black); border-radius: 12px; padding: 20px; border: 2px solid var(--blue); grid-column: 1 / -1;">
+                <h3 style="color: var(--blue); margin-bottom: 15px;">
+                    <i class="fas fa-shield-check"></i> Logs de Segurança
+                </h3>
+                <div id="securityLogs" style="max-height: 200px; overflow-y: auto; background: var(--dark-gray); padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.9rem;">
+                    <!-- Logs serão renderizados aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 
     <div class="container">
@@ -1344,6 +1418,143 @@
         </div>
     </div>
 
+<script>
+// Proteção de Autenticação
+const firebaseConfig = {
+    apiKey: "AIzaSyA-MT3SU98q0RZhEMh1IEpmgEaGXZPpKAQ",
+    authDomain: "notebook-emprestimo.firebaseapp.com",
+    databaseURL: "https://notebook-emprestimo-default-rtdb.firebaseio.com",
+    projectId: "notebook-emprestimo",
+    storageBucket: "notebook-emprestimo.firebasestorage.app",
+    messagingSenderId: "1007063409338",
+    appId: "1:1007063409338:web:5538614ffa1eaf315e5883",
+    measurementId: "G-56H4W8HG9Z"
+};
+
+// Verificar se Firebase já não foi inicializado
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+const auth = firebase.auth();
+
+// Sistema de Proteção
+// Atualizar a proteção no index.html
+class AuthGuard {
+    constructor() {
+        this.currentUser = null;
+        this.userRole = null;
+        this.checkAuth();
+        this.setupLogout();
+    }
+
+    checkAuth() {
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                // Verificar se usuário está autorizado
+                const userSession = await firebase.database().ref(`userSessions/${user.uid}`).once('value');
+                
+                if (userSession.exists()) {
+                    this.currentUser = user;
+                    this.userRole = userSession.val().role;
+                    this.showUserInfo(user, userSession.val());
+                    
+                    // Mostrar aba admin se for super-admin
+                    if (this.userRole === 'super-admin') {
+                        document.getElementById('adminTab').style.display = 'block';
+                    }
+                    
+                    console.log('✅ Usuário autenticado:', user.email, 'Role:', this.userRole);
+                } else {
+                    // Usuário não autorizado
+                    await auth.signOut();
+                    window.location.href = 'index-login.html';
+                }
+            } else {
+                window.location.href = 'index-login.html';
+            }
+        });
+    }
+
+    showUserInfo(user, session) {
+        if (!document.getElementById('user-info')) {
+            const userInfo = document.createElement('div');
+            userInfo.id = 'user-info';
+            userInfo.innerHTML = `
+                <div style="position: fixed; top: 10px; right: 20px; z-index: 1000; background: var(--dark-gray); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--primary-orange); display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-${session.role === 'super-admin' ? 'crown' : 'user'}" style="color: var(--primary-orange);"></i>
+                        <div>
+                            <div style="color: var(--white); font-size: 0.9rem; font-weight: 600;">${user.displayName || user.email}</div>
+                            <div style="color: var(--light-orange); font-size: 0.75rem;">${session.role === 'super-admin' ? 'Super Admin' : 'Usuário'}</div>
+                        </div>
+                    </div>
+                    <button onclick="authGuard.logout()" style="background: var(--red); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s ease;" onmouseover="this.style.background='#c62828'" onmouseout="this.style.background='var(--red)'">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(userInfo);
+        }
+    }
+
+    setupLogout() {
+        let lastActivity = Date.now();
+        const TIMEOUT = 8 * 60 * 60 * 1000;
+
+        const updateActivity = () => {
+            lastActivity = Date.now();
+        };
+
+        document.addEventListener('click', updateActivity);
+        document.addEventListener('keypress', updateActivity);
+        document.addEventListener('scroll', updateActivity);
+
+        setInterval(() => {
+            if (Date.now() - lastActivity > TIMEOUT) {
+                this.logout('Sessão expirada por inatividade');
+            }
+        }, 60000);
+    }
+
+    async logout(message = 'Logout realizado com sucesso') {
+        try {
+            if (this.currentUser) {
+                await firebase.database().ref(`userSessions/${this.currentUser.uid}`).update({
+                    lastLogout: new Date().toISOString()
+                });
+            }
+            
+            await auth.signOut();
+            alert(message);
+            window.location.href = 'index-login.html';
+        } catch (error) {
+            console.error('Erro no logout:', error);
+            alert('Erro ao fazer logout');
+        }
+    }
+
+    getCurrentUser() {
+        return this.currentUser;
+    }
+
+    getUserRole() {
+        return this.userRole;
+    }
+
+    isAdmin() {
+        return this.userRole === 'super-admin';
+    }
+}
+
+
+// Inicializar proteção
+let authGuard;
+document.addEventListener('DOMContentLoaded', () => {
+    authGuard = new AuthGuard();
+});
+</script>
+
 <script src="firebase.js"></script>
 <script>
 class SistemaEmprestimos {
@@ -1362,6 +1573,153 @@ class SistemaEmprestimos {
         console.log('🚀 Inicializando sistema...');
         this.init();
     }
+
+    // Adicionar estas funções à classe SistemaEmprestimos
+
+async adicionarUsuario() {
+    if (!authGuard.isAdmin()) {
+        this.showToast('❌ Apenas administradores podem adicionar usuários', 'error');
+        return;
+    }
+
+    const email = document.getElementById('newUserEmail').value.trim();
+    const name = document.getElementById('newUserName').value.trim();
+    const role = document.getElementById('newUserRole').value;
+
+    if (!email || !name) {
+        this.showToast('❌ Email e nome são obrigatórios', 'error');
+        return;
+    }
+
+    try {
+        // Adicionar à lista de usuários autorizados
+        const authorizedUsers = await firebase.database().ref('authorizedUsers').once('value');
+        const users = authorizedUsers.val() || {};
+        
+        if (users[email]) {
+            this.showToast('❌ Usuário já existe', 'error');
+            return;
+        }
+
+        users[email] = {
+            role: role,
+            permissions: role === 'admin' ? ['read', 'write', 'manage'] : ['read', 'write'],
+            createdBy: authGuard.getCurrentUser().uid,
+            createdAt: new Date().toISOString(),
+            displayName: name
+        };
+
+        await firebase.database().ref('authorizedUsers').set(users);
+        
+        // Enviar convite por email (simulado)
+        this.showToast(`✅ Usuário ${email} adicionado! Envie as credenciais manualmente.`, 'success');
+        
+        // Limpar campos
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserName').value = '';
+        
+        this.renderUsersList();
+        
+    } catch (error) {
+        console.error('❌ Erro ao adicionar usuário:', error);
+        this.showToast('❌ Erro ao adicionar usuário', 'error');
+    }
+}
+
+async alterarSenhaAdmin() {
+    if (!authGuard.isAdmin()) {
+        this.showToast('❌ Apenas administradores podem alterar senhas', 'error');
+        return;
+    }
+
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmNewPassword').value;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        this.showToast('❌ Todos os campos são obrigatórios', 'error');
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        this.showToast('❌ Senhas não coincidem', 'error');
+        return;
+    }
+
+    if (newPassword.length < 8) {
+        this.showToast('❌ Nova senha deve ter pelo menos 8 caracteres', 'error');
+        return;
+    }
+
+    try {
+        const user = authGuard.getCurrentUser();
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+        
+        // Reautenticar
+        await user.reauthenticateWithCredential(credential);
+        
+        // Alterar senha
+        await user.updatePassword(newPassword);
+        
+        this.showToast('✅ Senha alterada com sucesso!', 'success');
+        
+        // Limpar campos
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmNewPassword').value = '';
+        
+    } catch (error) {
+        console.error('❌ Erro ao alterar senha:', error);
+        this.showToast('❌ Senha atual incorreta ou erro no servidor', 'error');
+    }
+}
+
+async renderUsersList() {
+    if (!authGuard.isAdmin()) return;
+
+    try {
+        const snapshot = await firebase.database().ref('authorizedUsers').once('value');
+        const users = snapshot.val() || {};
+        
+        const container = document.getElementById('usersList');
+        container.innerHTML = Object.entries(users).map(([email, data]) => `
+            <div style="background: var(--dark-gray); padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="color: var(--white); font-weight: 600; font-size: 0.9rem;">${data.displayName || email}</div>
+                    <div style="color: var(--light-orange); font-size: 0.8rem;">${email} - ${data.role}</div>
+                </div>
+                ${data.role !== 'super-admin' ? `
+                    <button onclick="sistema.removerUsuario('${email}')" class="btn-danger btn-small" style="padding: 4px 8px; font-size: 0.8rem;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ` : `
+                    <span style="color: var(--primary-orange); font-size: 0.8rem;">
+                        <i class="fas fa-crown"></i> Admin
+                    </span>
+                `}
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar usuários:', error);
+    }
+}
+
+async removerUsuario(email) {
+    if (!authGuard.isAdmin()) return;
+
+    if (!confirm(`Remover usuário ${email}?`)) return;
+
+    try {
+        await firebase.database().ref(`authorizedUsers/${email.replace('.', '_DOT_')}`).remove();
+        this.showToast(`✅ Usuário ${email} removido`, 'success');
+        this.renderUsersList();
+    } catch (error) {
+        console.error('❌ Erro ao remover usuário:', error);
+        this.showToast('❌ Erro ao remover usuário', 'error');
+    }
+}
+
 
     async init() {
         try {

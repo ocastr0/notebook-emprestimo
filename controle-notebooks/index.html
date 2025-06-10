@@ -1584,8 +1584,25 @@ class SistemaEmprestimos {
         this.setupNotebookManagementButtons();
     }, 1000);
 
-        console.log('✅ Event listeners configurados');
-    }
+   setTimeout(() => {
+        const btnConfirmarDevolucao = document.getElementById('confirmarDevolucao');
+        if (btnConfirmarDevolucao) {
+            // Remover listeners antigos
+            btnConfirmarDevolucao.replaceWith(btnConfirmarDevolucao.cloneNode(true));
+            
+            // Adicionar novo listener
+            const newBtn = document.getElementById('confirmarDevolucao');
+            newBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.confirmarDevolucao();
+            });
+            
+            console.log('✅ Event listener do botão confirmar devolução configurado');
+        }
+    }, 500);
+
+    console.log('✅ Event listeners configurados');
+}
 
     setupNotebookManagementButtons() {
     console.log('🔧 Configurando botões de gestão de notebooks...');
@@ -1898,17 +1915,17 @@ class SistemaEmprestimos {
         }
     }
 
-    async executarDevolucao() {
-    console.log('⚡ Executando processo de devolução...');
+    async confirmarDevolucao() {
+    console.log('✅ Processando devolução...');
     
     const modal = document.getElementById('modalDevolucao');
     if (!modal) {
-        this.showToast('❌ Modal não encontrado!', 'error');
+        this.showToast('❌ Modal de devolução não encontrado!', 'error');
         return;
     }
     
-    const notebookId = parseInt(modal.dataset.notebookId);
-    const emprestimoId = parseInt(modal.dataset.emprestimoId);
+    const notebookId = parseInt(modal.getAttribute('data-notebook-id'));
+    const emprestimoId = parseInt(modal.getAttribute('data-emprestimo-id'));
     const observacoes = document.getElementById('observacoesDevolucao')?.value?.trim() || '';
     
     console.log('📋 Dados da devolução:', { notebookId, emprestimoId, observacoes });
@@ -1927,169 +1944,67 @@ class SistemaEmprestimos {
         return;
     }
     
-    if (!emprestimo) {
-        this.showToast('❌ Empréstimo não encontrado!', 'error');
-        return;
-    }
-    
-    if (emprestimo.status !== 'ativo') {
-        this.showToast('❌ Empréstimo não está ativo!', 'error');
+    if (!emprestimo || emprestimo.status !== 'ativo') {
+        this.showToast('❌ Empréstimo não encontrado ou não está ativo!', 'error');
         return;
     }
     
     // Desabilitar botão durante processamento
-    const btnConfirmar = modal.querySelector('#confirmarDevolucaoBtn');
-    const textoBotaoOriginal = btnConfirmar.innerHTML;
-    btnConfirmar.disabled = true;
-    btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
-    
-    try {
-        console.log('💾 Atualizando dados da devolução...');
+    const btnConfirmar = modal.querySelector('#confirmarDevolucao');
+    if (btnConfirmar) {
+        const textoOriginal = btnConfirmar.innerHTML;
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
         
-        const agora = new Date().toISOString();
-        
-        // Atualizar empréstimo (seguindo a lógica dos resultados da busca)
-        emprestimo.status = 'devolvido';
-        emprestimo.dataDevolucao = agora;
-        emprestimo.observacoesDevolucao = observacoes;
-        
-        console.log('📝 Empréstimo atualizado:', {
-            id: emprestimo.id,
-            status: emprestimo.status,
-            dataDevolucao: emprestimo.dataDevolucao
-        });
-        
-        // Atualizar notebook (limpar todos os dados de empréstimo)
-        const dadosOriginais = {
-            colaborador: notebook.colaborador,
-            setor: notebook.setor,
-            chamado: notebook.chamado
-        };
-        
-        notebook.status = 'disponivel';
-        notebook.colaborador = null;
-        notebook.setor = null;
-        notebook.chamado = null;
-        notebook.dataEntrega = null;
-        notebook.previsaoDevolucao = null;
-        
-        console.log('💻 Notebook atualizado:', {
-            id: notebook.id,
-            numero: notebook.numero,
-            status: notebook.status,
-            colaboradorAnterior: dadosOriginais.colaborador
-        });
-        
-        // Salvar no Firebase
-        await this.saveToFirebase();
-        
-        // Fechar modal
-        this.closeModal();
-        
-        // Atualizar toda a interface
-        this.renderAll();
-        
-        // Mensagem de sucesso
-        this.showToast(`✅ Notebook ${notebook.numero} devolvido por ${dadosOriginais.colaborador}!`, 'success');
-        
-        console.log('🎉 Devolução concluída com sucesso!');
-        
-    } catch (error) {
-        console.error('❌ Erro ao processar devolução:', error);
-        
-        // Reverter mudanças em caso de erro
-        emprestimo.status = 'ativo';
-        emprestimo.dataDevolucao = null;
-        emprestimo.observacoesDevolucao = null;
-        
-        notebook.status = 'emprestado';
-        // Dados do notebook serão restaurados no próximo carregamento
-        
-        this.showToast('❌ Erro ao processar devolução. Tente novamente.', 'error');
-        
-        // Reabilitar botão
-        btnConfirmar.disabled = false;
-        btnConfirmar.innerHTML = textoBotaoOriginal;
-    }
-}
-
-
-    async confirmarDevolucao() {
-    console.log('✅ Processando devolução...');
-    
-    const modal = document.getElementById('modalDevolucao');
-    if (!modal) {
-        this.showToast('Modal de devolução não encontrado!', 'error');
-        return;
-    }
-    
-    const notebookId = parseInt(modal.dataset.notebookId);
-    const observacoes = document.getElementById('observacoesDevolucao')?.value?.trim() || '';
-    
-    if (!notebookId || isNaN(notebookId)) {
-        this.showToast('ID do notebook inválido!', 'error');
-        return;
-    }
-    
-    // Encontrar notebook
-    const notebook = this.notebooks.find(nb => nb.id === notebookId);
-    if (!notebook || notebook.status !== 'emprestado') {
-        this.showToast('Notebook não encontrado ou não está emprestado!', 'error');
-        return;
-    }
-    
-    // Encontrar empréstimo ativo
-    const emprestimo = this.emprestimos.find(emp => 
-        emp.notebookId === notebookId && emp.status === 'ativo'
-    );
-    
-    if (!emprestimo) {
-        this.showToast('Empréstimo ativo não encontrado!', 'error');
-        return;
-    }
-    
-    try {
-        console.log('💾 Atualizando dados de devolução...');
-        
-        const agora = new Date().toISOString();
-        
-        // Atualizar empréstimo
-        emprestimo.status = 'devolvido';
-        emprestimo.dataDevolucao = agora;
-        emprestimo.observacoesDevolucao = observacoes;
-        
-        // Liberar notebook
-        notebook.status = 'disponivel';
-        notebook.colaborador = null;
-        notebook.setor = null;
-        notebook.chamado = null;
-        notebook.dataEntrega = null;
-        notebook.previsaoDevolucao = null;
-        
-        // Salvar no Firebase
-        await this.saveToFirebase();
-        
-        // Fechar modal
-        this.closeModal();
-        
-        // Atualizar interface
-        this.renderAll();
-        
-        this.showToast(`✅ Notebook ${notebook.numero} devolvido com sucesso!`, 'success');
-        
-        console.log('✅ Devolução processada com sucesso!');
-        
-    } catch (error) {
-        console.error('❌ Erro ao processar devolução:', error);
-        this.showToast('Erro ao processar devolução. Tente novamente.', 'error');
-        
-        // Reverter mudanças em caso de erro
-        emprestimo.status = 'ativo';
-        emprestimo.dataDevolucao = null;
-        emprestimo.observacoesDevolucao = null;
-        
-        notebook.status = 'emprestado';
-        // Restaurar dados originais do notebook se necessário
+        try {
+            console.log('💾 Atualizando dados da devolução...');
+            
+            const agora = new Date().toISOString();
+            const colaboradorAnterior = notebook.colaborador;
+            
+            // Atualizar empréstimo
+            emprestimo.status = 'devolvido';
+            emprestimo.dataDevolucao = agora;
+            emprestimo.observacoesDevolucao = observacoes;
+            
+            // Limpar dados do notebook
+            notebook.status = 'disponivel';
+            notebook.colaborador = null;
+            notebook.setor = null;
+            notebook.chamado = null;
+            notebook.dataEntrega = null;
+            notebook.previsaoDevolucao = null;
+            
+            // Salvar no Firebase
+            await this.saveToFirebase();
+            
+            // Fechar modal
+            this.closeModal();
+            
+            // Atualizar interface
+            this.renderAll();
+            
+            this.showToast(`✅ Notebook ${notebook.numero} devolvido por ${colaboradorAnterior}!`, 'success');
+            
+            console.log('🎉 Devolução concluída com sucesso!');
+            
+        } catch (error) {
+            console.error('❌ Erro ao processar devolução:', error);
+            
+            // Reverter mudanças em caso de erro
+            emprestimo.status = 'ativo';
+            emprestimo.dataDevolucao = null;
+            emprestimo.observacoesDevolucao = null;
+            
+            notebook.status = 'emprestado';
+            notebook.colaborador = colaboradorAnterior;
+            
+            this.showToast('❌ Erro ao processar devolução. Tente novamente.', 'error');
+            
+            // Reabilitar botão
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = textoOriginal;
+        }
     }
 }
 
@@ -2495,7 +2410,7 @@ closeModal() {
             const observacoes = modal.querySelector('#observacoesDevolucao');
             if (observacoes) observacoes.value = '';
             
-            const btnConfirmar = modal.querySelector('#confirmarDevolucaoBtn');
+            const btnConfirmar = modal.querySelector('#confirmarDevolucao');
             if (btnConfirmar) {
                 btnConfirmar.disabled = false;
                 btnConfirmar.innerHTML = '<i class="fas fa-check"></i> Confirmar Devolução';
@@ -2503,6 +2418,7 @@ closeModal() {
         }
     });
 }
+
 
 
 
@@ -3106,84 +3022,61 @@ criarContainerNotebooks() {
         return;
     }
 
-    // Criar modal se não existir
+    // Buscar modal existente ou criar novo
     let modal = document.getElementById('modalDevolucao');
     if (!modal) {
-        modal = this.criarModalDevolucaoCompleto();
+        console.log('🔨 Criando modal de devolução...');
+        modal = this.criarModalDevolucao();
     }
 
-    // Preencher informações do notebook
-    const infoContainer = modal.querySelector('#infoDevolucao');
-    if (infoContainer) {
+    // Preencher informações no modal existente
+    const infoDiv = modal.querySelector('#infoDevolucao') || modal.querySelector('.modal-body p');
+    if (infoDiv) {
         const diasEmprestado = Math.floor((new Date() - new Date(emprestimo.dataEntrega)) / (1000 * 60 * 60 * 24));
         const isAtrasado = this.isAtrasado(notebook.previsaoDevolucao);
         const diasAtraso = isAtrasado ? Math.floor((new Date() - new Date(notebook.previsaoDevolucao)) / (1000 * 60 * 60 * 24)) : 0;
 
-        infoContainer.innerHTML = `
+        infoDiv.innerHTML = `
             <div style="background: var(--dark-gray); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--primary-orange);">
-                <h3 style="color: var(--primary-orange); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                <h3 style="color: var(--primary-orange); margin-bottom: 15px;">
                     <i class="fas fa-laptop"></i> ${notebook.numero}
                 </h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                    <div>
-                        <strong style="color: var(--light-orange);">Colaborador:</strong><br>
-                        <span style="color: var(--white);">${notebook.colaborador}</span>
-                    </div>
-                    <div>
-                        <strong style="color: var(--light-orange);">Setor:</strong><br>
-                        <span style="color: var(--white);">${notebook.setor}</span>
-                    </div>
-                    <div>
-                        <strong style="color: var(--light-orange);">Chamado:</strong><br>
-                        <span style="color: var(--white);">${notebook.chamado}</span>
-                    </div>
-                    <div>
-                        <strong style="color: var(--light-orange);">Data Entrega:</strong><br>
-                        <span style="color: var(--white);">${this.formatDate(notebook.dataEntrega)}</span>
-                    </div>
-                    <div>
-                        <strong style="color: var(--light-orange);">Previsão Devolução:</strong><br>
-                        <span style="color: var(--white);">${this.formatDate(notebook.previsaoDevolucao)}</span>
-                    </div>
-                    <div>
-                        <strong style="color: var(--light-orange);">Tempo Emprestado:</strong><br>
-                        <span style="color: var(--white);">${diasEmprestado} dia(s)</span>
-                    </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div><strong style="color: var(--light-orange);">Colaborador:</strong><br>${notebook.colaborador}</div>
+                    <div><strong style="color: var(--light-orange);">Setor:</strong><br>${notebook.setor}</div>
+                    <div><strong style="color: var(--light-orange);">Chamado:</strong><br>${notebook.chamado}</div>
+                    <div><strong style="color: var(--light-orange);">Tempo Emprestado:</strong><br>${diasEmprestado} dia(s)</div>
                 </div>
                 ${isAtrasado ? `
                     <div style="background: rgba(244, 67, 54, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #F44336;">
-                        <strong style="color: #F44336;"><i class="fas fa-exclamation-triangle"></i> EMPRÉSTIMO ATRASADO</strong><br>
+                        <strong style="color: #F44336;"><i class="fas fa-exclamation-triangle"></i> ATRASADO</strong><br>
                         <span style="color: #ffcdd2;">${diasAtraso} dia(s) em atraso</span>
                     </div>
                 ` : `
                     <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #4CAF50;">
-                        <strong style="color: #4CAF50;"><i class="fas fa-check-circle"></i> DENTRO DO PRAZO</strong>
+                        <strong style="color: #4CAF50;"><i class="fas fa-check-circle"></i> NO PRAZO</strong>
                     </div>
                 `}
             </div>
         `;
     }
     
-    // Limpar campo observações
+    // Limpar observações
     const observacoes = modal.querySelector('#observacoesDevolucao');
     if (observacoes) {
         observacoes.value = '';
-        observacoes.focus();
     }
     
-    // Armazenar IDs no modal
-    modal.dataset.notebookId = notebookId;
-    modal.dataset.emprestimoId = emprestimo.id;
+    // Configurar dados no modal
+    modal.setAttribute('data-notebook-id', notebookId);
+    modal.setAttribute('data-emprestimo-id', emprestimo.id);
     
     // Mostrar modal
     modal.classList.add('active');
     
-    console.log('✅ Modal de devolução configurado para:', {
-        notebook: notebook.numero,
-        colaborador: notebook.colaborador,
-        emprestimo: emprestimo.id
-    });
+    console.log('✅ Modal de devolução aberto para:', notebook.numero);
 }
+
 
 criarModalDevolucaoCompleto() {
     console.log('🔨 Criando modal de devolução completo...');

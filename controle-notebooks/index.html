@@ -1063,57 +1063,94 @@
                 ];
             }
 
-            setupEventListeners() {
-                console.log('🔧 Configurando event listeners...');
+           setupEventListeners() {
+        console.log('🔧 Configurando event listeners...');
 
-                // Navegação entre tabs
-                document.querySelectorAll('.nav-tab').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const tabName = e.target.closest('.nav-tab').dataset.tab;
-                        this.switchTab(tabName);
-                    });
-                });
+        // Navegação entre tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tabName = e.target.closest('.tab-btn').dataset.tab;
+                this.switchTab(tabName);
+            });
+        });
 
-                // FORMULÁRIO DE SOLICITAÇÃO
-                const formSolicitacao = document.getElementById('formSolicitacao');
-                if (formSolicitacao) {
-                    formSolicitacao.addEventListener('submit', (e) => {
-                        e.preventDefault();
-                        this.criarSolicitacao();
-                    });
+        // FORMULÁRIO DE SOLICITAÇÃO
+        const formSolicitacao = document.getElementById('formSolicitacao');
+        if (formSolicitacao) {
+            formSolicitacao.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.criarSolicitacao();
+            });
+        }
+
+        // BOTÃO SOLICITAR EMPRÉSTIMO - BACKUP
+        const btnSolicitar = document.querySelector('button[type="submit"]');
+        if (btnSolicitar) {
+            btnSolicitar.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.criarSolicitacao();
+            });
+        }
+
+        // BOTÃO ADICIONAR SETOR
+        const btnAdicionarSetor = document.querySelector('#setores .btn-primary');
+        if (btnAdicionarSetor) {
+            btnAdicionarSetor.onclick = null;
+            btnAdicionarSetor.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.adicionarSetor();
+            });
+        }
+
+        // INPUT SETOR COM ENTER
+        const inputSetor = document.getElementById('novoSetor');
+        if (inputSetor) {
+            inputSetor.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.adicionarSetor();
                 }
+            });
+        }
 
-                // BOTÃO ADICIONAR SETOR
-                const btnAdicionarSetor = document.querySelector('#setores .btn-primary');
-                if (btnAdicionarSetor) {
-                    btnAdicionarSetor.onclick = null;
-                    btnAdicionarSetor.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        this.adicionarSetor();
-                    });
-                }
+        this.setupModalEventListeners();
 
-                // INPUT SETOR COM ENTER
-                const inputSetor = document.getElementById('novoSetor');
-                if (inputSetor) {
-                    inputSetor.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            this.adicionarSetor();
-                        }
-                    });
-                }
+        // NAVEGAÇÃO DO CALENDÁRIO
+        this.setupCalendarEventListeners();
 
-                // NAVEGAÇÃO DO CALENDÁRIO
-                this.setupCalendarEventListeners();
+        // BOTÕES DE GESTÃO DE NOTEBOOKS - CONFIGURAR APÓS DELAY
+        setTimeout(() => {
+            this.setupNotebookManagementButtons();
+        }, 1000);
 
-                // BOTÕES DE GESTÃO DE NOTEBOOKS
-                setTimeout(() => {
-                    this.setupNotebookManagementButtons();
-                }, 1000);
+        // ADICIONAR: Event listeners de filtros do histórico
+    setTimeout(() => {
+        this.setupHistoricoFilters();
+    }, 1000);
 
-                console.log('✅ Event listeners configurados');
-            }
+        console.log('✅ Event listeners configurados');
+    }
+
+    setupCalendarEventListeners() {
+        const prevMonth = document.getElementById('prevMonth');
+        const nextMonth = document.getElementById('nextMonth');
+        
+        if (prevMonth) {
+            prevMonth.onclick = null;
+            prevMonth.addEventListener('click', () => {
+                this.currentMonth.setMonth(this.currentMonth.getMonth() - 1);
+                this.renderCalendario();
+            });
+        }
+        
+        if (nextMonth) {
+            nextMonth.onclick = null;
+            nextMonth.addEventListener('click', () => {
+                this.currentMonth.setMonth(this.currentMonth.getMonth() + 1);
+                this.renderCalendario();
+            });
+        }
+    }
 
             setupCalendarEventListeners() {
                 const prevMonth = document.getElementById('prevMonth');
@@ -2069,17 +2106,486 @@
             }
 
             // Placeholders para funções futuras
-            abrirModalDevolucao(id) { console.log('🔄 Devolver notebook:', id); }
-            abrirModalAdicionarNotebook() { console.log('➕ Adicionar notebook'); }
-            abrirModalEdicaoMassa() { console.log('✏️ Edição em massa'); }
-            abrirModalGerarLote() { console.log('🔢 Gerar lote'); }
-            exportarNotebooks() { console.log('📤 Exportar'); }
-            importarNotebooks() { console.log('📥 Importar'); }
-            resetarNotebooks() { if(confirm('Resetar notebooks?')) { this.createDefaultData(); this.saveToFirebase(); this.renderAll(); } }
-            editarNotebook(id) { console.log('✏️ Editar notebook:', id); }
-            duplicarNotebook(id) { console.log('📋 Duplicar notebook:', id); }
-            excluirNotebook(id) { console.log('🗑️ Excluir notebook:', id); }
+            abrirModalDevolucao(notebookId) {
+        console.log('🔄 Abrindo modal de devolução para notebook ID:', notebookId);
+        
+        const notebook = this.notebooks.find(nb => nb.id === notebookId);
+        if (!notebook || notebook.status !== 'emprestado') {
+            this.showToast('❌ Notebook não encontrado ou não está emprestado!', 'error');
+            return;
+        }
 
+        const emprestimo = this.emprestimos.find(emp => 
+            emp.notebookId === notebookId && emp.status === 'ativo'
+        );
+
+        if (!emprestimo) {
+            this.showToast('❌ Empréstimo ativo não encontrado!', 'error');
+            return;
+        }
+
+        // Criar modal se não existir
+        let modal = document.getElementById('modalDevolucao');
+        if (!modal) {
+            modal = this.criarModalDevolucao();
+        }
+
+        // Preencher informações
+        const infoDiv = modal.querySelector('#infoDevolucao');
+        if (infoDiv) {
+            const diasEmprestado = Math.floor((new Date() - new Date(emprestimo.dataEntrega)) / (1000 * 60 * 60 * 24));
+            const isAtrasado = this.isAtrasado(notebook.previsaoDevolucao);
+            const diasAtraso = isAtrasado ? Math.floor((new Date() - new Date(notebook.previsaoDevolucao)) / (1000 * 60 * 60 * 24)) : 0;
+
+            infoDiv.innerHTML = `
+                <div style="background: var(--dark-gray); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--primary-orange);">
+                    <h3 style="color: var(--primary-orange); margin-bottom: 15px;">
+                        <i class="fas fa-laptop"></i> ${notebook.numero}
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div><strong style="color: var(--light-orange);">Colaborador:</strong><br>${notebook.colaborador}</div>
+                        <div><strong style="color: var(--light-orange);">Setor:</strong><br>${notebook.setor}</div>
+                        <div><strong style="color: var(--light-orange);">Chamado:</strong><br>${notebook.chamado}</div>
+                        <div><strong style="color: var(--light-orange);">Tempo Emprestado:</strong><br>${diasEmprestado} dia(s)</div>
+                    </div>
+                    ${isAtrasado ? `
+                        <div style="background: rgba(244, 67, 54, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #F44336;">
+                            <strong style="color: #F44336;"><i class="fas fa-exclamation-triangle"></i> ATRASADO</strong><br>
+                            <span style="color: #ffcdd2;">${diasAtraso} dia(s) em atraso</span>
+                        </div>
+                    ` : `
+                        <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #4CAF50;">
+                            <strong style="color: #4CAF50;"><i class="fas fa-check-circle"></i> NO PRAZO</strong>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+        
+        // Limpar observações
+        const observacoes = modal.querySelector('#observacoesDevolucao');
+        if (observacoes) {
+            observacoes.value = '';
+        }
+        
+        // Armazenar dados no modal
+        modal.setAttribute('data-notebook-id', notebookId);
+        modal.setAttribute('data-emprestimo-id', emprestimo.id);
+        
+        // Mostrar modal
+        modal.classList.add('active');
+        
+        // Configurar listener do botão confirmar
+        setTimeout(() => {
+            this.setupModalDevolucaoListener();
+        }, 100);
+        
+        console.log('✅ Modal de devolução aberto para:', notebook.numero);
+    }
+           abrirModalAdicionarNotebook() {
+        console.log('➕ Abrindo modal para adicionar notebook...');
+        
+        let modal = document.getElementById('modalAdicionarNotebook');
+        if (!modal) {
+            modal = this.criarModalAdicionarNotebook();
+        }
+        
+        // Preencher campos automáticos
+        this.preencherCamposAutomaticos();
+        
+        modal.classList.add('active');
+        
+        // Focar no primeiro campo
+        setTimeout(() => {
+            const primeiroInput = modal.querySelector('input[type="text"]');
+            if (primeiroInput) primeiroInput.focus();
+        }, 100);
+    }
+
+    criarModalAdicionarNotebook() {
+        const modal = document.createElement('div');
+        modal.id = 'modalAdicionarNotebook';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px; background: var(--black); border-radius: 12px; border: 2px solid var(--primary-orange);">
+                <div class="modal-header" style="background: var(--primary-orange); padding: 20px; border-radius: 10px 10px 0 0;">
+                    <h2 style="margin: 0; color: var(--white); display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-plus"></i> Adicionar Novo Notebook
+                    </h2>
+                    <button class="modal-close" style="background: none; border: none; color: var(--white); font-size: 24px; cursor: pointer; position: absolute; top: 15px; right: 20px;">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 30px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label for="novoNotebookNumero" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                                <i class="fas fa-hashtag"></i> Número do Notebook:
+                            </label>
+                            <input type="text" id="novoNotebookNumero" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        </div>
+                        <div class="form-group">
+                            <label for="novoNotebookSerie" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                                <i class="fas fa-barcode"></i> Número de Série:
+                            </label>
+                            <input type="text" id="novoNotebookSerie" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        </div>
+                        <div class="form-group">
+                            <label for="novoNotebookRfid" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                                <i class="fas fa-wifi"></i> RFID:
+                            </label>
+                            <input type="text" id="novoNotebookRfid" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        </div>
+                        <div class="form-group">
+                            <label for="novoNotebookModelo" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                                <i class="fas fa-laptop"></i> Modelo:
+                            </label>
+                            <input type="text" id="novoNotebookModelo" placeholder="Ex: Dell Inspiron 15 3000" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        </div>
+                        <div class="form-group">
+                            <label for="novoNotebookProcessador" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                                <i class="fas fa-microchip"></i> Processador:
+                            </label>
+                            <input type="text" id="novoNotebookProcessador" placeholder="Ex: Intel Core i5-1135G7" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        </div>
+                        <div class="form-group">
+                            <label for="novoNotebookMemoria" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                                <i class="fas fa-memory"></i> Memória RAM:
+                            </label>
+                            <input type="text" id="novoNotebookMemoria" placeholder="Ex: 8GB DDR4" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="novoNotebookDescricao" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-align-left"></i> Descrição/Observações:
+                        </label>
+                        <textarea 
+                            id="novoNotebookDescricao" 
+                            rows="3" 
+                            placeholder="Informações adicionais, estado do equipamento, acessórios inclusos, etc."
+                            style="width: 100%; padding: 15px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white); resize: vertical; font-family: inherit;"
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid var(--medium-gray); display: flex; gap: 15px; justify-content: flex-end;">
+                    <button class="btn-secondary modal-close" style="padding: 12px 24px;">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button id="confirmarAdicionarNotebook" class="btn-primary" style="padding: 12px 24px;">
+                        <i class="fas fa-save"></i> Salvar Notebook
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Event listeners
+        modal.querySelector('#confirmarAdicionarNotebook').addEventListener('click', () => {
+            this.confirmarAdicionarNotebook();
+        });
+        
+        modal.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', () => this.closeModal());
+        });
+        
+        return modal;
+    }
+             abrirModalEdicaoMassa() {
+    console.log('✏️ Abrindo modal de edição em massa...');
+    
+    let modal = document.getElementById('modalEdicaoMassa');
+    if (!modal) {
+        modal = this.criarModalEdicaoMassa();
+    }
+    
+    // Gerar exemplo para o usuário
+    this.gerarExemploEdicaoMassa();
+    
+    modal.classList.add('active');
+    
+    // Focar no textarea
+    setTimeout(() => {
+        const textarea = modal.querySelector('#edicaoMassaTextarea');
+        if (textarea) textarea.focus();
+    }, 100);
+}
+
+            abrirModalGerarLote() { console.log('🔢 Gerar lote'); }
+            exportarNotebooks() {
+        try {
+            const dados = {
+                notebooks: this.notebooks,
+                emprestimos: this.emprestimos,
+                setores: this.setores,
+                data_export: new Date().toISOString(),
+                total_notebooks: this.notebooks.length,
+                total_emprestimos: this.emprestimos.length
+            };
+            
+            const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `notebooks_backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            this.showToast('📤 Dados exportados com sucesso!', 'success');
+        } catch (error) {
+            this.showToast('❌ Erro ao exportar dados', 'error');
+        }
+    }
+
+            importarNotebooks() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const dados = JSON.parse(e.target.result);
+                        if (dados.notebooks && Array.isArray(dados.notebooks)) {
+                            this.notebooks = dados.notebooks;
+                            if (dados.emprestimos) this.emprestimos = dados.emprestimos;
+                            if (dados.setores) this.setores = dados.setores;
+                            
+                            await this.saveToFirebase();
+                            this.renderAll();
+                            this.showToast('📥 Dados importados com sucesso!', 'success');
+                        } else {
+                            this.showToast('❌ Formato de arquivo inválido', 'error');
+                        }
+                    } catch (error) {
+                        this.showToast('❌ Erro ao ler arquivo', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+        input.click();
+    }
+async resetarNotebooks() {
+        if (confirm('⚠️ Isso irá remover TODOS os notebooks e empréstimos!\n\nTem certeza que deseja continuar?')) {
+            try {
+                this.notebooks = this.createDefaultNotebooks();
+                this.emprestimos = [];
+                await this.saveToFirebase();
+                this.renderAll();
+                this.showToast('🔄 Sistema resetado com 15 notebooks padrão!', 'success');
+            } catch (error) {
+                this.showToast('❌ Erro ao resetar sistema', 'error');
+            }
+        }
+    }
+    
+editarNotebook(id) {
+    console.log('✏️ Editando notebook ID:', id);
+    
+    const notebook = this.notebooks.find(nb => nb.id === id);
+    if (!notebook) {
+        this.showToast('❌ Notebook não encontrado!', 'error');
+        return;
+    }
+
+    // Criar modal se não existir
+    let modal = document.getElementById('modalEditarNotebook');
+    if (!modal) {
+        modal = this.criarModalEditarNotebook();
+    }
+
+    // Preencher campos com dados atuais
+    this.preencherCamposEdicao(notebook);
+    
+    // Armazenar ID no modal
+    modal.setAttribute('data-notebook-id', id);
+    
+    // Mostrar modal
+    modal.classList.add('active');
+    
+    // Focar no primeiro campo
+    setTimeout(() => {
+        const primeiroInput = modal.querySelector('input[type="text"]');
+        if (primeiroInput) primeiroInput.focus();
+    }, 100);
+}
+
+    criarModalEditarNotebook() {
+    const modal = document.createElement('div');
+    modal.id = 'modalEditarNotebook';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 800px; background: var(--black); border-radius: 12px; border: 2px solid var(--primary-orange);">
+            <div class="modal-header" style="background: var(--primary-orange); padding: 20px; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: var(--white); display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-edit"></i> Editar Notebook
+                </h2>
+                <button class="modal-close" style="background: none; border: none; color: var(--white); font-size: 24px; cursor: pointer; position: absolute; top: 15px; right: 20px;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="editNumero" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-hashtag"></i> Número do Notebook:
+                        </label>
+                        <input type="text" id="editNumero" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    <div class="form-group">
+                        <label for="editSerie" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-barcode"></i> Número de Série:
+                        </label>
+                        <input type="text" id="editSerie" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    <div class="form-group">
+                        <label for="editRfid" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-wifi"></i> RFID:
+                        </label>
+                        <input type="text" id="editRfid" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    <div class="form-group">
+                        <label for="editModelo" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-laptop"></i> Modelo:
+                        </label>
+                        <input type="text" id="editModelo" placeholder="Ex: Dell Inspiron 15 3000" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    <div class="form-group">
+                        <label for="editProcessador" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-microchip"></i> Processador:
+                        </label>
+                        <input type="text" id="editProcessador" placeholder="Ex: Intel Core i5-1135G7" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    <div class="form-group">
+                        <label for="editMemoria" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-memory"></i> Memória RAM:
+                        </label>
+                        <input type="text" id="editMemoria" placeholder="Ex: 8GB DDR4" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editDescricao" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                        <i class="fas fa-align-left"></i> Descrição/Observações:
+                    </label>
+                    <textarea 
+                        id="editDescricao" 
+                        rows="4" 
+                        placeholder="Informações adicionais, estado do equipamento, acessórios inclusos, etc."
+                        style="width: 100%; padding: 15px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white); resize: vertical; font-family: inherit;"
+                    ></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid var(--medium-gray); display: flex; gap: 15px; justify-content: flex-end;">
+                <button class="btn-secondary modal-close" style="padding: 12px 24px;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button id="confirmarEdicaoNotebook" class="btn-primary" style="padding: 12px 24px;">
+                    <i class="fas fa-save"></i> Salvar Alterações
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event listeners
+    modal.querySelector('#confirmarEdicaoNotebook').addEventListener('click', () => {
+        this.confirmarEdicaoNotebook();
+    });
+    
+    modal.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', () => this.closeModal());
+    });
+    
+    return modal;
+}
+
+           async duplicarNotebook(id) {
+        const notebook = this.notebooks.find(nb => nb.id === id);
+        if (!notebook) return;
+        
+        try {
+            const proximoId = Math.max(...this.notebooks.map(nb => nb.id)) + 1;
+            const proximoNumero = `EMPRESTIMO_${proximoId.toString().padStart(2, '0')}`;
+            
+            const duplicado = {
+                ...notebook,
+                id: proximoId,
+                numero: proximoNumero,
+                serie: `${Math.floor(Math.random() * 9000) + 1000}DD3`,
+                rfid: `${200794 + proximoId}`,
+                status: 'disponivel',
+                colaborador: null,
+                setor: null,
+                chamado: null,
+                dataEntrega: null,
+                previsaoDevolucao: null,
+                dataCadastro: new Date().toISOString()
+            };
+            
+            this.notebooks.push(duplicado);
+            await this.saveToFirebase();
+            this.renderAll();
+            
+            this.showToast(`📋 Notebook duplicado como ${duplicado.numero}`, 'success');
+            
+        } catch (error) {
+            console.error('❌ Erro ao duplicar notebook:', error);
+            this.showToast('Erro ao duplicar notebook', 'error');
+        }
+    }
+
+    async excluirNotebook(id) {
+        const notebook = this.notebooks.find(nb => nb.id === id);
+        if (!notebook) return;
+        
+        if (confirm(`⚠️ Excluir o notebook ${notebook.numero}?\n\nEsta ação não pode ser desfeita.`)) {
+            try {
+                this.notebooks = this.notebooks.filter(nb => nb.id !== id);
+                await this.saveToFirebase();
+                this.renderAll();
+                this.showToast(`🗑️ Notebook ${notebook.numero} excluído!`, 'success');
+            } catch (error) {
+                console.error('❌ Erro ao excluir notebook:', error);
+                this.showToast('❌ Erro ao excluir notebook', 'error');
+            }
+        }
+    }
+async excluirNotebook(id) {
+        const notebook = this.notebooks.find(nb => nb.id === id);
+        if (!notebook) return;
+        
+        if (confirm(`⚠️ Excluir o notebook ${notebook.numero}?\n\nEsta ação não pode ser desfeita.`)) {
+            try {
+                this.notebooks = this.notebooks.filter(nb => nb.id !== id);
+                await this.saveToFirebase();
+                this.renderAll();
+                this.showToast(`🗑️ Notebook ${notebook.numero} excluído!`, 'success');
+            } catch (error) {
+                console.error('❌ Erro ao excluir notebook:', error);
+                this.showToast('❌ Erro ao excluir notebook', 'error');
+            }
+        }
+    }
+
+    abrirModalEdicaoMassa() {
+    console.log('✏️ Abrindo modal de edição em massa...');
+    
+    let modal = document.getElementById('modalEdicaoMassa');
+    if (!modal) {
+        modal = this.criarModalEdicaoMassa();
+    }
+    
+    // Gerar exemplo para o usuário
+    this.gerarExemploEdicaoMassa();
+    
+    modal.classList.add('active');
+    
+    // Focar no textarea
+    setTimeout(() => {
+        const textarea = modal.querySelector('#edicaoMassaTextarea');
+        if (textarea) textarea.focus();
+    }, 100);
+}
             formatDate(dateString) {
                 if (!dateString) return '-';
                 return new Date(dateString).toLocaleDateString('pt-BR');

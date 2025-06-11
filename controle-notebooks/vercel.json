@@ -1,53 +1,15 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "builds": [
     {
-      "src": "index-login.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "index.html", 
+      "src": "index.html",
       "use": "@vercel/static"
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/index-login.html"
-    },
-    {
-      "source": "/login",
-      "destination": "/index-login.html"
-    },
-    {
-      "source": "/sistema",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/index.html",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        },
-        {
-          "key": "Pragma",
-          "value": "no-cache"
-        },
-        {
-          "key": "Expires",
-          "value": "0"
-        }
-      ]
-    }
-  ],
-  "cleanUrls": true,
-  "trailingSlash": false
+  ]
 }

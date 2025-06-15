@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Notebooks</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* MANTER TODO O CSS ORIGINAL DO index-login.html */
+        :root {
+            --primary-orange: #FF6B35;
+            --dark-orange: #E55A2B;
+            --light-orange: #FF8C69;
+            --black: #0D1117;
+            --dark-gray: #161B22;
+            --medium-gray: #21262D;
+            --white: #F0F6FC;
+            --green: #238636;
+            --red: #DA3633;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--black) 0%, var(--dark-gray) 100%);
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: rgba(13, 17, 23, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--primary-orange);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(255, 107, 53, 0.3);
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo i {
+            font-size: 4rem;
+            color: var(--primary-orange);
+            margin-bottom: 15px;
+        }
+
+        .logo h1 {
+            color: var(--primary-orange);
+            font-size: 2rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--primary-orange);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            background: var(--dark-gray);
+            border: 2px solid var(--medium-gray);
+            border-radius: 10px;
+            color: var(--white);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-orange);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary-orange) 0%, var(--dark-orange) 100%);
+            border: none;
+            border-radius: 10px;
+            color: var(--white);
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .status.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid var(--green);
+            color: var(--green);
+            display: block;
+        }
+
+        .status.error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid var(--red);
+            color: var(--red);
+            display: block;
+        }
+
+        .security-badge {
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid var(--primary-orange);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .security-badge i {
+            color: var(--primary-orange);
+            margin-right: 8px;
+        }
+
+        .back-to-security {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-to-security a {
+            color: var(--light-orange);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-to-security a:hover {
+            color: var(--primary-orange);
+        }
+    </style>
+</head>
+<body>
+    <!-- VERIFICAÇÃO DE SEGURANÇA PRIMEIRO -->
+    <script>
+        // VERIFICAÇÃO DE ACESSO DE SEGURANÇA
+        (function() {
+            console.log('🔍 Verificando acesso de segurança...');
+            
+            const securityAccess = localStorage.getItem('securityAccess');
+            
+            if (!securityAccess) {
+                console.log('❌ Acesso de segurança não encontrado');
+                window.location.replace('./security.html');
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(securityAccess);
+                const now = Date.now();
+                
+                if (!data.authorized || now >= data.expiry) {
+                    console.log('⏰ Acesso de segurança expirado');
+                    localStorage.removeItem('securityAccess');
+                    window.location.replace('./security.html');
+                    return;
+                }
+                
+                console.log('✅ Acesso de segurança válido');
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar segurança:', error);
+                localStorage.removeItem('securityAccess');
+                window.location.replace('./security.html');
+                return;
+            }
+        })();
+    </script>
+
+    <div class="login-container">
+        <div class="logo">
+            <i class="fas fa-laptop"></i>
+            <h1>Sistema de Notebooks</h1>
+        </div>
+
+        <div class="security-badge">
+            <i class="fas fa-shield-check"></i>
+            <strong>Acesso Seguro Verificado</strong><br>
+            Segunda camada: Login do usuário
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">
+                    <i class="fas fa-envelope"></i> E-mail
+                </label>
+                <input type="email" id="email" required placeholder="Digite seu e-mail">
+            </div>
+
+            <div class="form-group">
+                <label for="password">
+                    <i class="fas fa-lock"></i> Senha
+                </label>
+                <input type="password" id="password" required placeholder="Digite sua senha">
+            </div>
+
+            <button type="submit" class="btn" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i> Entrar no Sistema
+            </button>
+        </form>
+
+        <div class="back-to-security">
+            <a href="./security.html">
+                <i class="fas fa-arrow-left"></i> Voltar à tela de segurança
+            </a>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // MANTER TODO O JAVASCRIPT ORIGINAL DO index-login.html
+        class OptimizedLogin {
+            constructor() {
+                this.isProcessing = false;
+                this.hasRedirected = false;
+                
+                console.log('🚀 Iniciando login otimizado...');
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Configurar Firebase
+                    const firebaseConfig = {
+                        apiKey: "AIzaSyA-MT3SU98q0RZhEMh1IEpmgEaGXZPpKAQ",
+                        authDomain: "notebook-emprestimo.firebaseapp.com",
+                        databaseURL: "https://notebook-emprestimo-default-rtdb.firebaseio.com",
+                        projectId: "notebook-emprestimo",
+                        storageBucket: "notebook-emprestimo.firebasestorage.app",
+                        messagingSenderId: "1007063409338",
+                        appId: "1:1007063409338:web:5538614ffa1eaf315e5883"
+                    };
+
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(firebaseConfig);
+                    }
+
+                    this.auth = firebase.auth();
+                    
+                    // Verificar se já está logado
+                    this.checkExistingAuth();
+                    
+                    // Configurar formulário
+                    this.setupForm();
+                    
+                    console.log('✅ Sistema de login pronto');
+                    
+                } catch (error) {
+                    console.error('❌ Erro ao inicializar:', error);
+                    this.showStatus('Sistema pronto para login', 'success');
+                }
+            }
+
+            checkExistingAuth() {
+                const unsubscribe = this.auth.onAuthStateChanged((user) => {
+                    unsubscribe();
+                    
+                    if (user && !this.hasRedirected) {
+                        console.log('✅ Usuário já logado:', user.email);
+                        this.redirectToSystem();
+                    }
+                });
+            }
+
+            setupForm() {
+                const form = document.getElementById('loginForm');
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.handleLogin();
+                    });
+                }
+            }
+
+            async handleLogin() {
+                if (this.isProcessing || this.hasRedirected) return;
+                
+                this.isProcessing = true;
+                this.setLoading(true);
+
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value.trim();
+
+                if (!email || !password) {
+                    this.showStatus('Preencha todos os campos', 'error');
+                    this.setLoading(false);
+                    this.isProcessing = false;
+                    return;
+                }
+
+                try {
+                    console.log('🔐 Fazendo login...');
+                    
+                    const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
+                    const user = userCredential.user;
+
+                    console.log('✅ Login bem-sucedido:', user.email);
+                    
+                    this.saveAuthData(user);
+                    
+                    this.showStatus('Login realizado com sucesso!', 'success');
+                    
+                    setTimeout(() => {
+                        this.redirectToSystem();
+                    }, 1000);
+
+                } catch (error) {
+                    console.error('❌ Erro no login:', error);
+                    this.handleLoginError(error);
+                } finally {
+                    this.setLoading(false);
+                    this.isProcessing = false;
+                }
+            }
+
+            saveAuthData(user) {
+                const authData = {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName || 'Administrador',
+                    timestamp: Date.now(),
+                    loginTime: new Date().toISOString()
+                };
+                
+                localStorage.setItem('fastAuth', JSON.stringify(authData));
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('userEmail', user.email);
+                
+                console.log('💾 Dados de sessão salvos');
+            }
+
+            redirectToSystem() {
+                if (this.hasRedirected) return;
+                
+                this.hasRedirected = true;
+                console.log('🚀 Redirecionando para sistema...');
+                
+                const currentHost = window.location.host;
+                const systemUrl = currentHost.includes('vercel.app') 
+                    ? `https://${currentHost}/index.html`
+                    : './index.html';
+                
+                window.location.href = systemUrl;
+            }
+
+            handleLoginError(error) {
+                const errorMessages = {
+                    'auth/user-not-found': 'Usuário não encontrado no Firebase',
+                    'auth/wrong-password': 'Senha incorreta',
+                    'auth/invalid-email': 'E-mail inválido',
+                    'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos',
+                    'auth/network-request-failed': 'Erro de conexão'
+                };
+
+                const message = errorMessages[error.code] || `Erro: ${error.message}`;
+                this.showStatus(message, 'error');
+            }
+
+            setLoading(loading) {
+                const btn = document.getElementById('loginBtn');
+                if (loading) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar no Sistema';
+                }
+            }
+
+            showStatus(message, type) {
+                const status = document.getElementById('status');
+                status.className = `status ${type}`;
+                status.textContent = message;
+
+                if (type === 'error') {
+                    setTimeout(() => {
+                        status.style.display = 'none';
+                    }, 5000);
+                }
+            }
+        }
+
+        // Inicializar sistema
+        document.addEventListener('DOMContentLoaded', () => {
+            new OptimizedLogin();
+        });
+    </script>
+</body>
+</html>

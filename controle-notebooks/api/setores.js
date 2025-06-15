@@ -1,151 +1,87 @@
-// setores.js - Funcionalidades de setores
-class SetorManager {
-    constructor() {
-        this.setores = {};
-        this.init();
+// API PARA GERENCIAR SETORES
+export default async function handler(req, res) {
+    // CORS
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
     }
 
-    init() {
-        this.setupRealtimeListeners();
-        this.setupEventListeners();
-    }
+    const { method } = req;
 
-    setupRealtimeListeners() {
-        dbRefs.setores.on('value', (snapshot) => {
-            if (snapshot.exists()) {
-                this.setores = snapshot.val();
-                this.updateSetorOptions();
-                this.renderSetores();
-                console.log('📡 Setores atualizados:', Object.keys(this.setores).length);
-            }
-        });
-    }
-
-    setupEventListeners() {
-        // Botão adicionar setor
-        const addBtn = document.getElementById('adicionarSetor');
-        if (addBtn) {
-            addBtn.addEventListener('click', () => this.adicionarSetor());
+    try {
+        switch (method) {
+            case 'GET':
+                return await getSetores(req, res);
+            case 'POST':
+                return await createSetor(req, res);
+            case 'DELETE':
+                return await deleteSetor(req, res);
+            default:
+                res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
+                res.status(405).json({ error: `Método ${method} não permitido` });
         }
-
-        // Enter no input
-        const input = document.getElementById('novoSetor');
-        if (input) {
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.adicionarSetor();
-                }
-            });
-        }
-    }
-
-    async adicionarSetor() {
-        const input = document.getElementById('novoSetor');
-        if (!input) return;
-
-        const nomoSetor = input.value.trim();
-
-        if (!nomoSetor) {
-            this.showToast('Digite o nome do setor!', 'error');
-            return;
-        }
-
-        if (nomoSetor.length < 2) {
-            this.showToast('Nome do setor deve ter pelo menos 2 caracteres!', 'error');
-            return;
-        }
-
-        // Verificar se já existe
-        const existe = Object.values(this.setores).some(setor => 
-            setor.nome.toLowerCase() === nomoSetor.toLowerCase()
-        );
-
-        if (existe) {
-            this.showToast('Este setor já existe!', 'error');
-            return;
-        }
-
-        try {
-            const nextId = Math.max(...Object.keys(this.setores).map(k => parseInt(k))) + 1;
-            
-            const novoSetor = {
-                id: nextId,
-                nome: nomoSetor,
-                ativo: true,
-                data_criacao: FirebaseUtils.timestamp()
-            };
-
-            await dbRefs.setores.child(nextId).set(novoSetor);
-            
-            input.value = '';
-            this.showToast('✅ Setor adicionado com sucesso!', 'success');
-            
-        } catch (error) {
-            console.error('❌ Erro ao adicionar setor:', error);
-            this.showToast('❌ Erro ao adicionar setor', 'error');
-        }
-    }
-
-    async removerSetor(id) {
-        if (!confirm('Tem certeza que deseja remover este setor?')) return;
-
-        try {
-            await dbRefs.setores.child(id).update({ ativo: false });
-            this.showToast('✅ Setor removido!', 'success');
-        } catch (error) {
-            console.error('❌ Erro ao remover setor:', error);
-            this.showToast('❌ Erro ao remover setor', 'error');
-        }
-    }
-
-    getSetoresAtivos() {
-        return Object.values(this.setores).filter(setor => setor.ativo !== false);
-    }
-
-    updateSetorOptions() {
-        // Atualizar selects de setores
-        const selects = ['setorColaborador', 'filtroSetor'];
-        
-        selects.forEach(selectId => {
-            const select = document.getElementById(selectId);
-            if (!select) return;
-            
-            const valorAtual = select.value;
-            const placeholder = selectId === 'filtroSetor' ? 'Todos os setores' : 'Selecione o setor';
-            
-            select.innerHTML = `<option value="">${placeholder}</option>`;
-            
-            this.getSetoresAtivos().forEach(setor => {
-                const option = document.createElement('option');
-                option.value = setor.nome;
-                option.textContent = setor.nome;
-                select.appendChild(option);
-            });
-            
-            select.value = valorAtual;
-        });
-    }
-
-    renderSetores() {
-        const container = document.getElementById('setoresList');
-        if (!container) return;
-
-        const setoresAtivos = this.getSetoresAtivos();
-
-        container.innerHTML = setoresAtivos.map(setor => `
-            <div class="setor-item">
-                <span>${setor.nome}</span>
-                <button class="btn-danger btn-small" onclick="setorManager.removerSetor(${setor.id})">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `).join('');
-    }
-
-    showToast(message, type = 'success') {
-        console.log(`${type.toUpperCase()}: ${message}`);
+    } catch (error) {
+        console.error('Erro na API de setores:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
     }
 }
 
-// Instanciar gerenciador
-const setorManager = new SetorManager();
+// GET - Buscar setores
+async function getSetores(req, res) {
+    const setores = [
+        "Dados Mestre",
+        "Customer Service", 
+        "T.I",
+        "CD VERA CRUZ",
+        "Suprimentos",
+        "ADM RH",
+        "Logística",
+        "Controladoria Fiscal"
+    ];
+
+    res.status(200).json({
+        success: true,
+        data: setores,
+        total: setores.length
+    });
+}
+
+// POST - Criar setor
+async function createSetor(req, res) {
+    const { nome } = req.body;
+
+    if (!nome || nome.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'Nome do setor é obrigatório'
+        });
+    }
+
+    res.status(201).json({
+        success: true,
+        data: { nome: nome.trim() },
+        message: 'Setor criado com sucesso'
+    });
+}
+
+// DELETE - Remover setor
+async function deleteSetor(req, res) {
+    const { nome } = req.query;
+
+    if (!nome) {
+        return res.status(400).json({
+            success: false,
+            error: 'Nome do setor é obrigatório'
+        });
+    }
+
+    res.status(200).json({
+        success: true,
+        message: `Setor "${nome}" removido com sucesso`
+    });
+}

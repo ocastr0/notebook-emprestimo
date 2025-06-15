@@ -1,12 +1,30 @@
 {
-  "name": "notebook-emprestimo",
+  "name": "controle-notebooks",
   "version": "1.0.0",
-  "type": "module",
+  "description": "Sistema de controle de empréstimos de notebooks",
   "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Build concluído'",
+    "deploy": "vercel --prod",
+    "preview": "vercel"
+  },
   "dependencies": {
     "firebase": "^10.7.1"
   },
-  "engines": {
-    "node": "18"
+  "devDependencies": {
+    "@vercel/node": "^3.0.0"
+  },
+  "keywords": [
+    "notebooks",
+    "emprestimos",
+    "firebase",
+    "vercel"
+  ],
+  "author": "Sistema de Notebooks",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seu-usuario/controle-notebooks"
   }
 }

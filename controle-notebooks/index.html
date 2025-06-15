@@ -2491,9 +2491,218 @@ class SistemaEmprestimos {
 
     // IMPLEMENTAR: Outras funções da gestão
     editarNotebook(id) {
-        console.log('✏️ Editando notebook:', id);
-        this.showToast('🚧 Função de edição em desenvolvimento', 'info');
+    console.log('✏️ Abrindo edição de notebook:', id);
+    
+    const notebook = this.notebooks.find(nb => nb.id === id);
+    if (!notebook) {
+        this.showToast('❌ Notebook não encontrado!', 'error');
+        return;
     }
+    
+    if (notebook.status === 'emprestado') {
+        this.showToast('⚠️ Não é possível editar um notebook em uso!', 'warning');
+        return;
+    }
+    
+    let modal = document.getElementById('modalEditarNotebookIndividual');
+    if (!modal) {
+        modal = this.criarModalEditarNotebook();
+    }
+    
+    // Preencher campos com dados atuais
+    document.getElementById('editarNumero').value = notebook.numero;
+    document.getElementById('editarSerie').value = notebook.serie;
+    document.getElementById('editarRfid').value = notebook.rfid;
+    document.getElementById('editarModelo').value = notebook.modelo || '';
+    document.getElementById('editarProcessador').value = notebook.processador || '';
+    document.getElementById('editarMemoria').value = notebook.memoria || '';
+    document.getElementById('editarDescricao').value = notebook.descricao || '';
+    
+    // Armazenar ID do notebook sendo editado
+    modal.setAttribute('data-notebook-id', id);
+    
+    modal.classList.add('active');
+    
+    // Focar no primeiro campo
+    setTimeout(() => {
+        document.getElementById('editarNumero').focus();
+    }, 100);
+}
+
+criarModalEditarNotebook() {
+    const modal = document.createElement('div');
+    modal.id = 'modalEditarNotebookIndividual';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 800px; background: var(--black); border-radius: 12px; border: 2px solid var(--primary-orange);">
+            <div class="modal-header" style="background: var(--primary-orange); padding: 20px; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: var(--white); display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-edit"></i> Editar Notebook
+                </h2>
+                <button class="modal-close" style="background: none; border: none; color: var(--white); font-size: 24px; cursor: pointer; position: absolute; top: 15px; right: 20px;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div style="background: rgba(255,107,53,0.1); padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid var(--primary-orange);">
+                    <p style="margin: 0; color: var(--white); font-size: 0.9rem;">
+                        <i class="fas fa-info-circle" style="color: var(--primary-orange);"></i>
+                        <strong>Importante:</strong> Apenas notebooks disponíveis podem ser editados. 
+                        Verifique se todos os campos obrigatórios estão preenchidos.
+                    </p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="editarNumero" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-hashtag"></i> Número do Notebook: <span style="color: #ff6b6b;">*</span>
+                        </label>
+                        <input type="text" id="editarNumero" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editarSerie" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-barcode"></i> Número de Série: <span style="color: #ff6b6b;">*</span>
+                        </label>
+                        <input type="text" id="editarSerie" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editarRfid" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-wifi"></i> RFID: <span style="color: #ff6b6b;">*</span>
+                        </label>
+                        <input type="text" id="editarRfid" required style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editarModelo" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-laptop"></i> Modelo:
+                        </label>
+                        <input type="text" id="editarModelo" placeholder="Ex: Dell Inspiron 15 3000" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editarProcessador" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-microchip"></i> Processador:
+                        </label>
+                        <input type="text" id="editarProcessador" placeholder="Ex: Intel Core i5-1135G7" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editarMemoria" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-memory"></i> Memória RAM:
+                        </label>
+                        <input type="text" id="editarMemoria" placeholder="Ex: 8GB DDR4" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editarDescricao" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                        <i class="fas fa-align-left"></i> Descrição/Observações:
+                    </label>
+                    <textarea 
+                        id="editarDescricao" 
+                        rows="3" 
+                        placeholder="Informações adicionais, estado do equipamento, acessórios inclusos, etc."
+                        style="width: 100%; padding: 15px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white); resize: vertical; font-family: inherit;"
+                    ></textarea>
+                </div>
+                
+                <div style="background: var(--dark-gray); padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <small style="color: var(--light-orange); font-size: 0.85rem;">
+                        <i class="fas fa-exclamation-circle"></i> 
+                        <strong>Nota:</strong> Os campos marcados com <span style="color: #ff6b6b;">*</span> são obrigatórios. 
+                        Certifique-se de que o número e RFID sejam únicos no sistema.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid var(--medium-gray); display: flex; gap: 15px; justify-content: flex-end;">
+                <button class="btn-secondary modal-close" style="padding: 12px 24px;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button id="salvarEdicaoNotebook" class="btn-primary" style="padding: 12px 24px;">
+                    <i class="fas fa-save"></i> Salvar Alterações
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event listeners
+    modal.querySelector('#salvarEdicaoNotebook').addEventListener('click', () => {
+        this.salvarEdicaoNotebook();
+    });
+    
+    modal.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', () => this.closeModal());
+    });
+    
+    return modal;
+}
+
+async salvarEdicaoNotebook() {
+    console.log('💾 Salvando edição de notebook...');
+    
+    const modal = document.getElementById('modalEditarNotebookIndividual');
+    const notebookId = parseInt(modal.getAttribute('data-notebook-id'));
+    
+    const dados = {
+        numero: document.getElementById('editarNumero')?.value?.trim(),
+        serie: document.getElementById('editarSerie')?.value?.trim(),
+        rfid: document.getElementById('editarRfid')?.value?.trim(),
+        modelo: document.getElementById('editarModelo')?.value?.trim(),
+        processador: document.getElementById('editarProcessador')?.value?.trim(),
+        memoria: document.getElementById('editarMemoria')?.value?.trim(),
+        descricao: document.getElementById('editarDescricao')?.value?.trim()
+    };
+    
+    // Validações
+    if (!dados.numero || !dados.serie || !dados.rfid) {
+        this.showToast('❌ Número, Série e RFID são obrigatórios!', 'error');
+        return;
+    }
+    
+    // Verificar duplicatas (excluindo o notebook atual)
+    const duplicataNumero = this.notebooks.find(nb => nb.numero === dados.numero && nb.id !== notebookId);
+    if (duplicataNumero) {
+        this.showToast('❌ Já existe outro notebook com este número!', 'error');
+        return;
+    }
+    
+    const duplicataRfid = this.notebooks.find(nb => nb.rfid === dados.rfid && nb.id !== notebookId);
+    if (duplicataRfid) {
+        this.showToast('❌ Já existe outro notebook com este RFID!', 'error');
+        return;
+    }
+    
+    try {
+        const notebook = this.notebooks.find(nb => nb.id === notebookId);
+        if (!notebook) {
+            this.showToast('❌ Notebook não encontrado!', 'error');
+            return;
+        }
+        
+        // Atualizar dados
+        const numeroAnterior = notebook.numero;
+        notebook.numero = dados.numero;
+        notebook.serie = dados.serie;
+        notebook.rfid = dados.rfid;
+        notebook.modelo = dados.modelo;
+        notebook.processador = dados.processador;
+        notebook.memoria = dados.memoria;
+        notebook.descricao = dados.descricao;
+        
+        await this.saveToFirebase();
+        
+        this.closeModal();
+        this.renderAll();
+        
+        this.showToast(`✅ Notebook ${numeroAnterior} atualizado com sucesso!`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Erro ao salvar edição:', error);
+        this.showToast('❌ Erro ao salvar alterações', 'error');
+    }
+}
 
     async duplicarNotebook(id) {
         const notebook = this.notebooks.find(nb => nb.id === id);
@@ -2548,12 +2757,750 @@ class SistemaEmprestimos {
     }
 
     abrirModalEdicaoMassa() {
-        this.showToast('🚧 Função de edição em massa em desenvolvimento', 'info');
+    console.log('📝 Abrindo edição em massa...');
+    
+    if (this.notebooks.length === 0) {
+        this.showToast('❌ Não há notebooks para editar!', 'error');
+        return;
     }
+    
+    let modal = document.getElementById('modalEdicaoMassaCompleto');
+    if (!modal) {
+        modal = this.criarModalEdicaoMassa();
+    }
+    
+    // Preencher lista de notebooks
+    this.preencherListaEdicaoMassa();
+    
+    modal.classList.add('active');
+}
+
+criarModalEdicaoMassa() {
+    const modal = document.createElement('div');
+    modal.id = 'modalEdicaoMassaCompleto';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 1200px; max-height: 90vh; background: var(--black); border-radius: 12px; border: 2px solid var(--primary-orange);">
+            <div class="modal-header" style="background: var(--primary-orange); padding: 20px; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: var(--white); display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-edit"></i> Edição em Massa - Todos os Notebooks
+                </h2>
+                <button class="modal-close" style="background: none; border: none; color: var(--white); font-size: 24px; cursor: pointer; position: absolute; top: 15px; right: 20px;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 30px; overflow-y: auto; max-height: calc(90vh - 160px);">
+                <div style="background: rgba(255,107,53,0.1); padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid var(--primary-orange);">
+                    <h3 style="color: var(--primary-orange); margin: 0 0 10px 0; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-exclamation-triangle"></i> Atenção - Edição em Massa
+                    </h3>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--white); font-size: 0.9rem; line-height: 1.6;">
+                        <li><strong>Notebooks em uso</strong> não podem ser editados (campos desabilitados)</li>
+                        <li><strong>Números e RFIDs</strong> devem ser únicos no sistema</li>
+                        <li><strong>Alterações serão salvas</strong> para todos os notebooks editáveis</li>
+                        <li>Use o <strong>botão "Gerar Automaticamente"</strong> para números sequenciais</li>
+                    </ul>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button id="gerarAutomaticamente" class="btn-warning" style="padding: 10px 15px;">
+                            <i class="fas fa-magic"></i> Gerar Automaticamente
+                        </button>
+                        <button id="limparCampos" class="btn-secondary" style="padding: 10px 15px;">
+                            <i class="fas fa-eraser"></i> Limpar Campos
+                        </button>
+                        <button id="aplicarModelo" class="btn-info" style="padding: 10px 15px;">
+                            <i class="fas fa-copy"></i> Aplicar Modelo
+                        </button>
+                    </div>
+                    
+                    <div style="background: var(--dark-gray); padding: 12px 20px; border-radius: 8px; display: flex; align-items: center; gap: 15px;">
+                        <span style="color: var(--white); font-size: 0.9rem;">
+                            <strong>Total:</strong> <span id="totalNotebooksEdicao">0</span>
+                        </span>
+                        <span style="color: var(--success); font-size: 0.9rem;">
+                            <strong>Editáveis:</strong> <span id="editaveisCount">0</span>
+                        </span>
+                        <span style="color: var(--danger); font-size: 0.9rem;">
+                            <strong>Em Uso:</strong> <span id="emUsoCount">0</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <div id="listaEdicaoMassaContainer" style="background: var(--dark-gray); border-radius: 8px; padding: 20px;">
+                    <!-- Lista será preenchida dinamicamente -->
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid var(--medium-gray); display: flex; gap: 15px; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="confirmarEdicaoMassa" style="width: 20px; height: 20px;">
+                    <label for="confirmarEdicaoMassa" style="color: var(--light-orange); font-size: 0.9rem; cursor: pointer;">
+                        Confirmo que revisei todas as alterações e desejo salvar
+                    </label>
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <button class="btn-secondary modal-close" style="padding: 12px 24px;">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button id="salvarEdicaoMassa" class="btn-primary" style="padding: 12px 24px;" disabled>
+                        <i class="fas fa-save"></i> Salvar Todas as Alterações
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event listeners
+    modal.querySelector('#salvarEdicaoMassa').addEventListener('click', () => {
+        this.salvarEdicaoMassa();
+    });
+    
+    modal.querySelector('#gerarAutomaticamente').addEventListener('click', () => {
+        this.gerarAutomaticamente();
+    });
+    
+    modal.querySelector('#limparCampos').addEventListener('click', () => {
+        this.limparCamposEdicaoMassa();
+    });
+    
+    modal.querySelector('#aplicarModelo').addEventListener('click', () => {
+        this.aplicarModeloPadrao();
+    });
+    
+    modal.querySelector('#confirmarEdicaoMassa').addEventListener('change', (e) => {
+        modal.querySelector('#salvarEdicaoMassa').disabled = !e.target.checked;
+    });
+    
+    modal.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', () => this.closeModal());
+    });
+    
+    return modal;
+}
+
+preencherListaEdicaoMassa() {
+    console.log('📋 Preenchendo lista de edição em massa...');
+    
+    const container = document.getElementById('listaEdicaoMassaContainer');
+    if (!container) return;
+    
+    const editaveis = this.notebooks.filter(nb => nb.status === 'disponivel');
+    const emUso = this.notebooks.filter(nb => nb.status === 'emprestado');
+    
+    // Atualizar contadores
+    document.getElementById('totalNotebooksEdicao').textContent = this.notebooks.length;
+    document.getElementById('editaveisCount').textContent = editaveis.length;
+    document.getElementById('emUsoCount').textContent = emUso.length;
+    
+    container.innerHTML = `
+        <div style="display: grid; gap: 20px;">
+            ${this.notebooks.map(notebook => {
+                const isEditavel = notebook.status === 'disponivel';
+                
+                return `
+                    <div style="background: ${isEditavel ? 'var(--black)' : 'var(--medium-gray)'}; border-radius: 10px; padding: 20px; border-left: 4px solid ${isEditavel ? 'var(--success)' : 'var(--danger)'}; ${!isEditavel ? 'opacity: 0.6;' : ''}">
+                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start;">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 120px;">
+                                <div style="background: ${isEditavel ? 'var(--success)' : 'var(--danger)'}; color: white; padding: 8px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-align: center; width: 100%;">
+                                    ${isEditavel ? '✓ Editável' : '✗ Em Uso'}
+                                </div>
+                                <div style="color: var(--light-orange); font-weight: 600; font-size: 0.9rem; text-align: center;">
+                                    ID: ${notebook.id}
+                                </div>
+                                ${!isEditavel ? `
+                                    <div style="background: rgba(255,107,53,0.2); padding: 8px; border-radius: 6px; text-align: center;">
+                                        <div style="color: var(--primary-orange); font-size: 0.8rem; font-weight: 600;">Em uso por:</div>
+                                        <div style="color: var(--white); font-size: 0.75rem;">${notebook.colaborador}</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                <div class="form-group">
+                                    <label style="color: var(--primary-orange); font-weight: 600; margin-bottom: 5px; display: block; font-size: 0.9rem;">
+                                        <i class="fas fa-hashtag"></i> Número:
+                                    </label>
+                                    <input type="text" 
+                                           data-notebook-id="${notebook.id}" 
+                                           data-field="numero" 
+                                           value="${notebook.numero}" 
+                                           ${isEditavel ? '' : 'disabled readonly'}
+                                           style="width: 100%; padding: 10px; border: 2px solid var(--medium-gray); border-radius: 6px; background: ${isEditavel ? 'var(--dark-gray)' : 'var(--medium-gray)'}; color: var(--white); font-size: 0.9rem;">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label style="color: var(--primary-orange); font-weight: 600; margin-bottom: 5px; display: block; font-size: 0.9rem;">
+                                        <i class="fas fa-barcode"></i> Série:
+                                    </label>
+                                    <input type="text" 
+                                           data-notebook-id="${notebook.id}" 
+                                           data-field="serie" 
+                                           value="${notebook.serie}" 
+                                           ${isEditavel ? '' : 'disabled readonly'}
+                                           style="width: 100%; padding: 10px; border: 2px solid var(--medium-gray); border-radius: 6px; background: ${isEditavel ? 'var(--dark-gray)' : 'var(--medium-gray)'}; color: var(--white); font-size: 0.9rem;">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label style="color: var(--primary-orange); font-weight: 600; margin-bottom: 5px; display: block; font-size: 0.9rem;">
+                                        <i class="fas fa-wifi"></i> RFID:
+                                    </label>
+                                    <input type="text" 
+                                           data-notebook-id="${notebook.id}" 
+                                           data-field="rfid" 
+                                           value="${notebook.rfid}" 
+                                           ${isEditavel ? '' : 'disabled readonly'}
+                                           style="width: 100%; padding: 10px; border: 2px solid var(--medium-gray); border-radius: 6px; background: ${isEditavel ? 'var(--dark-gray)' : 'var(--medium-gray)'}; color: var(--white); font-size: 0.9rem;">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label style="color: var(--primary-orange); font-weight: 600; margin-bottom: 5px; display: block; font-size: 0.9rem;">
+                                        <i class="fas fa-laptop"></i> Modelo:
+                                    </label>
+                                    <input type="text" 
+                                           data-notebook-id="${notebook.id}" 
+                                           data-field="modelo" 
+                                           value="${notebook.modelo || ''}" 
+                                           ${isEditavel ? '' : 'disabled readonly'}
+                                           placeholder="Ex: Dell Inspiron 15"
+                                           style="width: 100%; padding: 10px; border: 2px solid var(--medium-gray); border-radius: 6px; background: ${isEditavel ? 'var(--dark-gray)' : 'var(--medium-gray)'}; color: var(--white); font-size: 0.9rem;">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label style="color: var(--primary-orange); font-weight: 600; margin-bottom: 5px; display: block; font-size: 0.9rem;">
+                                        <i class="fas fa-microchip"></i> Processador:
+                                    </label>
+                                    <input type="text" 
+                                           data-notebook-id="${notebook.id}" 
+                                           data-field="processador" 
+                                           value="${notebook.processador || ''}" 
+                                           ${isEditavel ? '' : 'disabled readonly'}
+                                           placeholder="Ex: Intel i5"
+                                           style="width: 100%; padding: 10px; border: 2px solid var(--medium-gray); border-radius: 6px; background: ${isEditavel ? 'var(--dark-gray)' : 'var(--medium-gray)'}; color: var(--white); font-size: 0.9rem;">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label style="color: var(--primary-orange); font-weight: 600; margin-bottom: 5px; display: block; font-size: 0.9rem;">
+                                        <i class="fas fa-memory"></i> Memória:
+                                    </label>
+                                    <input type="text" 
+                                           data-notebook-id="${notebook.id}" 
+                                           data-field="memoria" 
+                                           value="${notebook.memoria || ''}" 
+                                           ${isEditavel ? '' : 'disabled readonly'}
+                                           placeholder="Ex: 8GB DDR4"
+                                           style="width: 100%; padding: 10px; border: 2px solid var(--medium-gray); border-radius: 6px; background: ${isEditavel ? 'var(--dark-gray)' : 'var(--medium-gray)'}; color: var(--white); font-size: 0.9rem;">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label style="color: var(--primary-orange); font-weight: 600; margin-bottom: 5px; display: block; font-size: 0.9rem;">
+                                <i class="fas fa-align-left"></i> Descrição:
+                            </label>
+                            <textarea data-notebook-id="${notebook.id}" 
+                                      data-field="descricao" 
+                                      rows="2" 
+                                      ${isEditavel ? '' : 'disabled readonly'}
+                                      placeholder="Informações adicionais do notebook..."
+                                      style="width: 100%; padding: 10px; border: 2px solid var(--medium-gray); border-radius: 6px; background: ${isEditavel ? 'var(--dark-gray)' : 'var(--medium-gray)'}; color: var(--white); font-size: 0.9rem; resize: vertical; font-family: inherit;">${notebook.descricao || ''}</textarea>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+    
+    console.log(`✅ Lista carregada: ${editaveis.length} editáveis, ${emUso.length} em uso`);
+}
+
+gerarAutomaticamente() {
+    console.log('🎲 Gerando dados automaticamente...');
+    
+    if (!confirm('🤖 Gerar automaticamente números sequenciais?\n\nIsso irá substituir os campos Número, Série e RFID de todos os notebooks editáveis.')) {
+        return;
+    }
+    
+    const editaveis = this.notebooks.filter(nb => nb.status === 'disponivel');
+    let contador = 1;
+    
+    editaveis.forEach((notebook, index) => {
+        // Número sequencial
+        const numeroInput = document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="numero"]`);
+        if (numeroInput) {
+            numeroInput.value = `EMPRESTIMO_${contador.toString().padStart(2, '0')}`;
+        }
+        
+        // Série aleatória
+        const serieInput = document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="serie"]`);
+        if (serieInput) {
+            serieInput.value = `${Math.floor(Math.random() * 9000) + 1000}DD3`;
+        }
+        
+        // RFID sequencial
+        const rfidInput = document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="rfid"]`);
+        if (rfidInput) {
+            rfidInput.value = `${200800 + contador}`;
+        }
+        
+        contador++;
+    });
+    
+    this.showToast(`🎲 Dados gerados automaticamente para ${editaveis.length} notebooks!`, 'success');
+}
+
+limparCamposEdicaoMassa() {
+    if (!confirm('🗑️ Limpar todos os campos editáveis?\n\nIsso irá remover apenas os campos opcionais (Modelo, Processador, Memória, Descrição).')) {
+        return;
+    }
+    
+    const camposLimpar = ['modelo', 'processador', 'memoria', 'descricao'];
+    
+    this.notebooks.forEach(notebook => {
+        if (notebook.status === 'disponivel') {
+            camposLimpar.forEach(campo => {
+                const input = document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="${campo}"], textarea[data-notebook-id="${notebook.id}"][data-field="${campo}"]`);
+                if (input) {
+                    input.value = '';
+                }
+            });
+        }
+    });
+    
+    this.showToast('🗑️ Campos opcionais limpos!', 'success');
+}
+
+aplicarModeloPadrao() {
+    const modelos = [
+        'Dell Inspiron 15 3000',
+        'Lenovo ThinkPad E14',
+        'HP Pavilion 14',
+        'Acer Aspire 5',
+        'ASUS VivoBook 15'
+    ];
+    
+    const processadores = [
+        'Intel Core i3-1115G4',
+        'Intel Core i5-1135G7',
+        'AMD Ryzen 5 5500U',
+        'Intel Core i7-1165G7'
+    ];
+    
+    const memorias = [
+        '4GB DDR4',
+        '8GB DDR4',
+        '16GB DDR4'
+    ];
+    
+    if (!confirm('🎯 Aplicar modelos padrão?\n\nIsso irá definir modelos, processadores e memórias aleatórios para todos os notebooks editáveis.')) {
+        return;
+    }
+    
+    this.notebooks.forEach(notebook => {
+        if (notebook.status === 'disponivel') {
+            // Modelo aleatório
+            const modeloInput = document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="modelo"]`);
+            if (modeloInput) {
+                modeloInput.value = modelos[Math.floor(Math.random() * modelos.length)];
+            }
+            
+            // Processador aleatório
+            const processadorInput = document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="processador"]`);
+            if (processadorInput) {
+                processadorInput.value = processadores[Math.floor(Math.random() * processadores.length)];
+            }
+            
+            // Memória aleatória
+            const memoriaInput = document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="memoria"]`);
+            if (memoriaInput) {
+                memoriaInput.value = memorias[Math.floor(Math.random() * memorias.length)];
+            }
+        }
+    });
+    
+    this.showToast('🎯 Modelos padrão aplicados!', 'success');
+}
+
+async salvarEdicaoMassa() {
+    console.log('💾 Salvando edição em massa...');
+    
+    const editaveis = this.notebooks.filter(nb => nb.status === 'disponivel');
+    const alteracoes = [];
+    const erros = [];
+    
+    // Coletar dados dos campos
+    const dadosAtualizados = {};
+    
+    editaveis.forEach(notebook => {
+        const dados = {
+            id: notebook.id,
+            numero: document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="numero"]`)?.value?.trim(),
+            serie: document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="serie"]`)?.value?.trim(),
+            rfid: document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="rfid"]`)?.value?.trim(),
+            modelo: document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="modelo"]`)?.value?.trim(),
+            processador: document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="processador"]`)?.value?.trim(),
+            memoria: document.querySelector(`input[data-notebook-id="${notebook.id}"][data-field="memoria"]`)?.value?.trim(),
+            descricao: document.querySelector(`textarea[data-notebook-id="${notebook.id}"][data-field="descricao"]`)?.value?.trim()
+        };
+        
+        dadosAtualizados[notebook.id] = dados;
+    });
+    
+    // Validações
+    const numeros = [];
+    const rfids = [];
+    
+    for (const [id, dados] of Object.entries(dadosAtualizados)) {
+        // Campos obrigatórios
+        if (!dados.numero || !dados.serie || !dados.rfid) {
+            erros.push(`Notebook ID ${id}: Número, Série e RFID são obrigatórios`);
+            continue;
+        }
+        
+        // Verificar duplicatas
+        if (numeros.includes(dados.numero)) {
+            erros.push(`Número "${dados.numero}" duplicado`);
+        } else {
+            numeros.push(dados.numero);
+        }
+        
+        if (rfids.includes(dados.rfid)) {
+            erros.push(`RFID "${dados.rfid}" duplicado`);
+        } else {
+            rfids.push(dados.rfid);
+        }
+        
+        // Verificar conflito com notebooks em uso
+        const conflitosNumero = this.notebooks.filter(nb => nb.numero === dados.numero && nb.id != id && nb.status === 'emprestado');
+        if (conflitosNumero.length > 0) {
+            erros.push(`Número "${dados.numero}" já usado por notebook em uso`);
+        }
+        
+        const conflitosRfid = this.notebooks.filter(nb => nb.rfid === dados.rfid && nb.id != id && nb.status === 'emprestado');
+        if (conflitosRfid.length > 0) {
+            erros.push(`RFID "${dados.rfid}" já usado por notebook em uso`);
+        }
+    }
+    
+    if (erros.length > 0) {
+        alert('❌ Erros encontrados:\n\n' + erros.join('\n'));
+        return;
+    }
+    
+    try {
+        // Aplicar mudanças
+        for (const [id, dados] of Object.entries(dadosAtualizados)) {
+            const notebook = this.notebooks.find(nb => nb.id == id);
+            if (notebook && notebook.status === 'disponivel') {
+                const mudancas = [];
+                
+                if (notebook.numero !== dados.numero) mudancas.push(`Número: ${notebook.numero} → ${dados.numero}`);
+                if (notebook.serie !== dados.serie) mudancas.push(`Série: ${notebook.serie} → ${dados.serie}`);
+                if (notebook.rfid !== dados.rfid) mudancas.push(`RFID: ${notebook.rfid} → ${dados.rfid}`);
+                
+                notebook.numero = dados.numero;
+                notebook.serie = dados.serie;
+                notebook.rfid = dados.rfid;
+                notebook.modelo = dados.modelo;
+                notebook.processador = dados.processador;
+                notebook.memoria = dados.memoria;
+                notebook.descricao = dados.descricao;
+                
+                if (mudancas.length > 0) {
+                    alteracoes.push(`Notebook ${dados.numero}: ${mudancas.join(', ')}`);
+                }
+            }
+        }
+        
+        await this.saveToFirebase();
+        
+        this.closeModal();
+        this.renderAll();
+        
+        if (alteracoes.length > 0) {
+            console.log('📋 Alterações aplicadas:', alteracoes);
+        }
+        
+        this.showToast(`✅ Edição em massa concluída! ${editaveis.length} notebooks processados.`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Erro na edição em massa:', error);
+        this.showToast('❌ Erro ao salvar alterações em massa', 'error');
+    }
+}
 
     abrirModalGerarLote() {
-        this.showToast('🚧 Função de gerar lote em desenvolvimento', 'info');
+    console.log('🎯 Abrindo geração em lote...');
+    
+    let modal = document.getElementById('modalGerarLoteCompleto');
+    if (!modal) {
+        modal = this.criarModalGerarLote();
     }
+    
+    // Definir valores padrão
+    document.getElementById('prefixoGerarLote').value = 'EMPRESTIMO_';
+    document.getElementById('sufixoSerieGerarLote').value = 'DD3';
+    document.getElementById('prefixoRfidGerarLote').value = '2008';
+    document.getElementById('quantidadeGerarLote').value = '15';
+    document.getElementById('numeroInicialGerarLote').value = '1';
+    
+    modal.classList.add('active');
+}
+
+criarModalGerarLote() {
+    const modal = document.createElement('div');
+    modal.id = 'modalGerarLoteCompleto';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 800px; background: var(--black); border-radius: 12px; border: 2px solid var(--primary-orange);">
+            <div class="modal-header" style="background: var(--primary-orange); padding: 20px; border-radius: 10px 10px 0 0;">
+                <h2 style="margin: 0; color: var(--white); display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-magic"></i> Gerar Notebooks em Lote
+                </h2>
+                <button class="modal-close" style="background: none; border: none; color: var(--white); font-size: 24px; cursor: pointer; position: absolute; top: 15px; right: 20px;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div style="background: rgba(255,107,53,0.1); padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid var(--primary-orange);">
+                    <h3 style="color: var(--primary-orange); margin: 0 0 10px 0; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-info-circle"></i> Como Funciona
+                    </h3>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--white); font-size: 0.9rem; line-height: 1.6;">
+                        <li><strong>Substitui todos</strong> os notebooks atuais por novos com numeração sequencial</li>
+                        <li><strong>Notebooks em uso</strong> não serão afetados</li>
+                        <li><strong>Apenas notebooks disponíveis</strong> serão substituídos</li>
+                        <li><strong>Use com cuidado</strong> - esta ação não pode ser desfeita</li>
+                    </ul>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                    <div class="form-group">
+                        <label for="prefixoGerarLote" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-hashtag"></i> Prefixo do Número:
+                        </label>
+                        <input type="text" id="prefixoGerarLote" value="EMPRESTIMO_" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        <small style="color: var(--light-orange); margin-top: 5px; display: block; font-size: 0.8rem;">
+                            Ex: EMPRESTIMO_, NOTEBOOK_, LAPTOP_
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sufixoSerieGerarLote" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-barcode"></i> Sufixo da Série:
+                        </label>
+                        <input type="text" id="sufixoSerieGerarLote" value="DD3" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        <small style="color: var(--light-orange); margin-top: 5px; display: block; font-size: 0.8rem;">
+                            Ex: DD3, ABC, XYZ (número aleatório será adicionado antes)
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="prefixoRfidGerarLote" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-wifi"></i> Prefixo RFID:
+                        </label>
+                        <input type="text" id="prefixoRfidGerarLote" value="2008" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        <small style="color: var(--light-orange); margin-top: 5px; display: block; font-size: 0.8rem;">
+                            Ex: 2008 (número sequencial será adicionado)
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="quantidadeGerarLote" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-sort-numeric-up"></i> Quantidade:
+                        </label>
+                        <input type="number" id="quantidadeGerarLote" value="15" min="1" max="100" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        <small style="color: var(--light-orange); margin-top: 5px; display: block; font-size: 0.8rem;">
+                            Quantos notebooks criar (máximo: 100)
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="numeroInicialGerarLote" style="color: var(--primary-orange); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-play"></i> Número Inicial:
+                        </label>
+                        <input type="number" id="numeroInicialGerarLote" value="1" min="1" style="width: 100%; padding: 12px; border: 2px solid var(--medium-gray); border-radius: 8px; background: var(--dark-gray); color: var(--white);">
+                        <small style="color: var(--light-orange); margin-top: 5px; display: block; font-size: 0.8rem;">
+                            A partir de qual número começar
+                        </small>
+                    </div>
+                </div>
+                
+                <div style="background: var(--dark-gray); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="color: var(--primary-orange); margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-eye"></i> Prévia dos Notebooks
+                    </h4>
+                    <div id="previaGerarLote" style="max-height: 200px; overflow-y: auto; background: var(--black); border-radius: 6px; padding: 15px;">
+                        <!-- Prévia será gerada aqui -->
+                    </div>
+                    <button id="atualizarPrevia" class="btn-secondary" style="margin-top: 15px; padding: 8px 16px; font-size: 0.9rem;">
+                        <i class="fas fa-refresh"></i> Atualizar Prévia
+                    </button>
+                </div>
+                
+                <div style="background: rgba(244, 67, 54, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #F44336;">
+                    <p style="margin: 0; color: var(--white); font-size: 0.9rem;">
+                        <i class="fas fa-exclamation-triangle" style="color: #F44336;"></i>
+                        <strong>Atenção:</strong> Esta ação irá substituir todos os notebooks disponíveis pelos novos. 
+                        Notebooks em uso não serão afetados. Esta operação não pode ser desfeita.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid var(--medium-gray); display: flex; gap: 15px; justify-content: flex-end;">
+                <button class="btn-secondary modal-close" style="padding: 12px 24px;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button id="confirmarGerarLote" class="btn-primary" style="padding: 12px 24px;">
+                    <i class="fas fa-magic"></i> Gerar Notebooks
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event listeners
+    modal.querySelector('#confirmarGerarLote').addEventListener('click', () => {
+        this.confirmarGerarLote();
+    });
+    
+    modal.querySelector('#atualizarPrevia').addEventListener('click', () => {
+        this.atualizarPreviaLote();
+    });
+    
+    // Atualizar prévia quando campos mudarem
+    ['prefixoGerarLote', 'sufixoSerieGerarLote', 'prefixoRfidGerarLote', 'quantidadeGerarLote', 'numeroInicialGerarLote'].forEach(id => {
+        modal.querySelector(`#${id}`).addEventListener('input', () => {
+            this.atualizarPreviaLote();
+        });
+    });
+    
+    modal.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', () => this.closeModal());
+    });
+    
+    // Atualizar prévia inicial
+    setTimeout(() => {
+        this.atualizarPreviaLote();
+    }, 100);
+    
+    return modal;
+}
+
+atualizarPreviaLote() {
+    const prefixo = document.getElementById('prefixoGerarLote')?.value || '';
+    const sufixoSerie = document.getElementById('sufixoSerieGerarLote')?.value || '';
+    const prefixoRfid = document.getElementById('prefixoRfidGerarLote')?.value || '';
+    const quantidade = parseInt(document.getElementById('quantidadeGerarLote')?.value) || 0;
+    const numeroInicial = parseInt(document.getElementById('numeroInicialGerarLote')?.value) || 1;
+    
+    const container = document.getElementById('previaGerarLote');
+    if (!container) return;
+    
+    if (quantidade <= 0 || quantidade > 100) {
+        container.innerHTML = '<p style="color: var(--danger); text-align: center;">Quantidade deve ser entre 1 e 100</p>';
+        return;
+    }
+    
+    let previa = '<div style="display: grid; gap: 8px; font-size: 0.85rem;">';
+    
+    for (let i = 0; i < Math.min(quantidade, 10); i++) {
+        const num = numeroInicial + i;
+        const numero = `${prefixo}${num.toString().padStart(2, '0')}`;
+        const serie = `${Math.floor(Math.random() * 9000) + 1000}${sufixoSerie}`;
+        const rfid = `${prefixoRfid}${(800 + num).toString().padStart(2, '0')}`;
+        
+        previa += `
+            <div style="background: rgba(255,107,53,0.1); padding: 8px 12px; border-radius: 4px; display: flex; justify-content: space-between; gap: 15px;">
+                <span style="color: var(--primary-orange); font-weight: 600;">${numero}</span>
+                <span style="color: var(--white);">${serie}</span>
+                <span style="color: var(--light-orange);">${rfid}</span>
+            </div>
+        `;
+    }
+    
+    if (quantidade > 10) {
+        previa += `<div style="text-align: center; color: var(--light-orange); font-style: italic;">... e mais ${quantidade - 10} notebooks</div>`;
+    }
+    
+    previa += '</div>';
+    container.innerHTML = previa;
+}
+
+async confirmarGerarLote() {
+    const prefixo = document.getElementById('prefixoGerarLote')?.value?.trim() || '';
+    const sufixoSerie = document.getElementById('sufixoSerieGerarLote')?.value?.trim() || '';
+    const prefixoRfid = document.getElementById('prefixoRfidGerarLote')?.value?.trim() || '';
+    const quantidade = parseInt(document.getElementById('quantidadeGerarLote')?.value) || 0;
+    const numeroInicial = parseInt(document.getElementById('numeroInicialGerarLote')?.value) || 1;
+    
+    if (quantidade <= 0 || quantidade > 100) {
+        this.showToast('❌ Quantidade deve ser entre 1 e 100!', 'error');
+        return;
+    }
+    
+    if (!prefixo) {
+        this.showToast('❌ Prefixo do número é obrigatório!', 'error');
+        return;
+    }
+    
+    const emUso = this.notebooks.filter(nb => nb.status === 'emprestado').length;
+    const disponiveisAtual = this.notebooks.filter(nb => nb.status === 'disponivel').length;
+    
+    const confirmMessage = `🎯 Confirmar geração em lote?\n\n` +
+        `• ${quantidade} novos notebooks serão criados\n` +
+        `• ${disponiveisAtual} notebooks disponíveis serão substituídos\n` +
+        `• ${emUso} notebooks em uso serão mantidos\n\n` +
+        `Esta ação não pode ser desfeita!`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    try {
+        console.log('🎯 Gerando notebooks em lote...');
+        
+        // Manter apenas notebooks em uso
+        const notebooksEmUso = this.notebooks.filter(nb => nb.status === 'emprestado');
+        
+        // Criar novos notebooks
+        const novosNotebooks = [];
+        for (let i = 0; i < quantidade; i++) {
+            const num = numeroInicial + i;
+            const proximoId = Math.max(0, ...this.notebooks.map(nb => nb.id)) + i + 1;
+            
+            novosNotebooks.push({
+                id: proximoId,
+                numero: `${prefixo}${num.toString().padStart(2, '0')}`,
+                serie: `${Math.floor(Math.random() * 9000) + 1000}${sufixoSerie}`,
+                rfid: `${prefixoRfid}${(800 + num).toString().padStart(2, '0')}`,
+                modelo: '',
+                processador: '',
+                memoria: '',
+                descricao: '',
+                dataCadastro: new Date().toISOString(),
+                status: 'disponivel',
+                colaborador: null,
+                setor: null,
+                chamado: null,
+                dataEntrega: null,
+                previsaoDevolucao: null
+            });
+        }
+        
+        // Substituir notebooks
+        this.notebooks = [...notebooksEmUso, ...novosNotebooks];
+        
+        await this.saveToFirebase();
+        
+        this.closeModal();
+        this.renderAll();
+        
+        this.showToast(`🎯 ${quantidade} notebooks gerados em lote! ${emUso} em uso mantidos.`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Erro ao gerar lote:', error);
+        this.showToast('❌ Erro ao gerar notebooks em lote', 'error');
+    }
+}
 
     exportarNotebooks() {
         try {
@@ -3047,15 +3994,21 @@ setupHistoricoFilters() {
     const filtroMes = document.getElementById('filtroMes');
     
     if (filtroNome) {
-        filtroNome.addEventListener('input', () => this.renderHistorico());
+        filtroNome.addEventListener('input', (e) => {
+            this.renderHistorico();
+        });
     }
     
     if (filtroSetor) {
-        filtroSetor.addEventListener('change', () => this.renderHistorico());
+        filtroSetor.addEventListener('change', (e) => {
+            this.renderHistorico();
+        });
     }
     
     if (filtroMes) {
-        filtroMes.addEventListener('change', () => this.renderHistorico());
+        filtroMes.addEventListener('change', (e) => {
+            this.renderHistorico();
+        });
     }
     
     console.log('✅ Filtros do histórico configurados');
@@ -3063,91 +4016,94 @@ setupHistoricoFilters() {
 
 
     renderSetores() {
-        console.log('🏢 Renderizando setores...');
-        
-        const container = document.getElementById('setoresList');
-        if (!container) {
-            console.error('❌ Container setoresList não encontrado!');
-            return;
-        }
+    const container = document.getElementById('setoresList');
+    if (!container) return;
 
-        if (!this.setores || this.setores.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 20px; background: var(--dark-gray); border-radius: 8px; opacity: 0.7;">
-                    <p>Nenhum setor cadastrado</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = this.setores.map((setor, index) => `
-            <div class="setor-item" style="background: var(--dark-gray); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary-orange);">
-                <span style="color: var(--white); font-weight: 500;">${setor}</span>
-                <button class="btn-danger btn-small remover-setor-btn" data-setor-index="${index}">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `).join('');
-
-        // Configurar listeners dos botões remover
-        setTimeout(() => {
-            document.querySelectorAll('.remover-setor-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const index = parseInt(btn.getAttribute('data-setor-index'));
-                    this.removerSetor(index);
-                });
-            });
-        }, 100);
-
-        console.log(`✅ ${this.setores.length} setores renderizados`);
+    if (!this.setores || this.setores.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px; opacity: 0.7;"><p>Nenhum setor cadastrado</p></div>';
+        return;
     }
+
+    container.innerHTML = this.setores.map((setor, index) => `
+        <div style="background: var(--black); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary-orange);">
+            <span style="color: var(--white); font-weight: 500;">${setor}</span>
+            <button class="btn-danger btn-small remover-setor-btn" data-setor-index="${index}" style="padding: 6px 10px;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `).join('');
+
+    // Event listeners para remoção de setores
+    document.querySelectorAll('.remover-setor-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const index = parseInt(btn.getAttribute('data-setor-index'));
+            this.removerSetor(index);
+        });
+    });
+}
 
     updateStats() {
-        const disponiveisCount = this.notebooks.filter(nb => nb.status === 'disponivel').length;
-        const emprestadosCount = this.notebooks.filter(nb => nb.status === 'emprestado').length;
-        const totalCount = this.notebooks.length;
-        
-        // Atualizar header
-        const disponiveisEl = document.getElementById('disponiveisCount');
-        const emprestadosEl = document.getElementById('emprestadosCount');
-        
-        if (disponiveisEl) disponiveisEl.textContent = disponiveisCount;
-        if (emprestadosEl) emprestadosEl.textContent = emprestadosCount;
-        
-        // Atualizar seção gestão
-        const totalEl = document.getElementById('totalNotebooks');
-        const disponiveisExtraEl = document.getElementById('disponiveis');
-        const emUsoEl = document.getElementById('emUso');
-        
-        if (totalEl) totalEl.textContent = totalCount;
-        if (disponiveisExtraEl) disponiveisExtraEl.textContent = disponiveisCount;
-        if (emUsoEl) emUsoEl.textContent = emprestadosCount;
+    const disponiveisCount = this.notebooks.filter(nb => nb.status === 'disponivel').length;
+    const emprestadosCount = this.notebooks.filter(nb => nb.status === 'emprestado').length;
+    const totalCount = this.notebooks.length;
+    
+    const elementos = [
+        ['disponiveisCount', disponiveisCount],
+        ['emprestadosCount', emprestadosCount],
+        ['totalNotebooks', totalCount],
+        ['disponiveis', disponiveisCount],
+        ['emUso', emprestadosCount]
+    ];
+    
+    elementos.forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    });
+}
 
-        console.log(`📊 Stats: ${totalCount} total, ${disponiveisCount} disponíveis, ${emprestadosCount} em uso`);
+updateNotebookOptions() {
+    const select = document.getElementById('notebookSelecionado');
+    if (!select) return;
+
+    const notebooksDisponiveis = this.notebooks.filter(nb => nb.status === 'disponivel');
+    
+    select.innerHTML = '<option value="">Selecione um notebook disponível</option>';
+    
+    if (notebooksDisponiveis.length === 0) {
+        select.innerHTML = '<option value="">Nenhum notebook disponível</option>';
+        select.disabled = true;
+    } else {
+        select.disabled = false;
+        notebooksDisponiveis.forEach(notebook => {
+            const option = document.createElement('option');
+            option.value = notebook.id;
+            option.textContent = `${notebook.numero} (Série: ${notebook.serie})`;
+            select.appendChild(option);
+        });
     }
+}
 
-    updateNotebookOptions() {
-        const select = document.getElementById('notebookSelecionado');
+    updateSetorOptions() {
+    const selects = ['setorColaborador', 'filtroSetor'];
+    
+    selects.forEach(selectId => {
+        const select = document.getElementById(selectId);
         if (!select) return;
-
-        const notebooksDisponiveis = this.notebooks.filter(nb => nb.status === 'disponivel');
         
-        select.innerHTML = '<option value="">Selecione um notebook disponível</option>';
+        const valorAtual = select.value;
+        const placeholder = selectId === 'filtroSetor' ? 'Todos os setores' : 'Selecione o setor';
         
-        if (notebooksDisponiveis.length === 0) {
-            select.innerHTML = '<option value="">Nenhum notebook disponível</option>';
-            select.disabled = true;
-        } else {
-            select.disabled = false;
-            notebooksDisponiveis.forEach(notebook => {
-                const option = document.createElement('option');
-                option.value = notebook.id;
-                option.textContent = `${notebook.numero} (Série: ${notebook.serie})`;
-                select.appendChild(option);
-            });
-        }
-    }
+        select.innerHTML = `<option value="">${placeholder}</option>`;
+        this.setores.forEach(setor => {
+            const option = document.createElement('option');
+            option.value = setor;
+            option.textContent = setor;
+            select.appendChild(option);
+        });
+        select.value = valorAtual;
+    });
+}
 
     updateSetorOptions() {
         const selects = ['setorColaborador', 'filtroSetor'];
@@ -3171,74 +4127,71 @@ setupHistoricoFilters() {
     }
 
     async adicionarSetor() {
-        const input = document.getElementById('novoSetor');
-        if (!input) return;
-        
-        const novoSetor = input.value.trim();
+    const input = document.getElementById('novoSetor');
+    if (!input) return;
+    
+    const novoSetor = input.value.trim();
 
-        if (!novoSetor) {
-            this.showToast('Digite o nome do setor!', 'error');
-            return;
-        }
-
-        if (this.setores.includes(novoSetor)) {
-            this.showToast('Este setor já existe!', 'warning');
-            return;
-        }
-
-        try {
-            this.setores.push(novoSetor);
-            await this.saveToFirebase();
-            
-            input.value = '';
-            this.renderSetores();
-            this.updateSetorOptions();
-            
-            this.showToast(`✅ Setor "${novoSetor}" adicionado!`, 'success');
-            
-        } catch (error) {
-            console.error('❌ Erro ao adicionar setor:', error);
-            this.setores = this.setores.filter(s => s !== novoSetor);
-            this.showToast('Erro ao salvar setor', 'error');
-        }
+    if (!novoSetor) {
+        this.showToast('Digite o nome do setor!', 'error');
+        return;
     }
+
+    if (this.setores.includes(novoSetor)) {
+        this.showToast('Este setor já existe!', 'warning');
+        return;
+    }
+
+    try {
+        this.setores.push(novoSetor);
+        await this.saveToFirebase();
+        
+        input.value = '';
+        this.renderSetores();
+        this.updateSetorOptions();
+        
+        this.showToast(`✅ Setor "${novoSetor}" adicionado!`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Erro ao adicionar setor:', error);
+        this.setores = this.setores.filter(s => s !== novoSetor);
+        this.showToast('Erro ao salvar setor', 'error');
+    }
+}
 
     async removerSetor(index) {
-        const setor = this.setores[index];
-        if (!confirm(`Remover o setor "${setor}"?`)) return;
+    const setor = this.setores[index];
+    if (!confirm(`Remover o setor "${setor}"?`)) return;
 
-        try {
-            this.setores.splice(index, 1);
-            await this.saveToFirebase();
-            
-            this.renderSetores();
-            this.updateSetorOptions();
-            
-            this.showToast(`✅ Setor "${setor}" removido!`, 'success');
-            
-        } catch (error) {
-            console.error('❌ Erro ao remover setor:', error);
-            this.showToast('Erro ao remover setor', 'error');
-        }
+    try {
+        this.setores.splice(index, 1);
+        await this.saveToFirebase();
+        
+        this.renderSetores();
+        this.updateSetorOptions();
+        
+        this.showToast(`✅ Setor "${setor}" removido!`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Erro ao remover setor:', error);
+        this.showToast('Erro ao remover setor', 'error');
     }
+}
+
 
     async saveToFirebase() {
-        try {
-            console.log('💾 Salvando no Firebase...');
-            
-            await Promise.all([
-                this.dbNotebooks.set(this.notebooks),
-                this.dbEmprestimos.set(this.emprestimos),
-                this.dbSetores.set(this.setores)
-            ]);
-            
-            console.log('✅ Dados salvos no Firebase');
-            
-        } catch (error) {
-            console.error('❌ Erro ao salvar no Firebase:', error);
-            throw error;
-        }
+    try {
+        await Promise.all([
+            this.dbNotebooks.set(this.notebooks),
+            this.dbEmprestimos.set(this.emprestimos),
+            this.dbSetores.set(this.setores)
+        ]);
+        console.log('✅ Dados salvos no Firebase');
+    } catch (error) {
+        console.error('❌ Erro ao salvar no Firebase:', error);
+        throw error;
     }
+}
 
     switchTab(tabName) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -3247,7 +4200,6 @@ setupHistoricoFilters() {
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     document.getElementById(tabName).classList.add('active');
 
-    // Renderizar conteúdo específico da aba
     setTimeout(() => {
         switch(tabName) {
             case 'dashboard':
@@ -3265,9 +4217,6 @@ setupHistoricoFilters() {
             case 'setores':
                 this.renderSetores();
                 this.renderListaNotebooksEdicao();
-                setTimeout(() => {
-                    this.setupNotebookManagementButtons();
-                }, 500);
                 break;
         }
     }, 100);
@@ -3275,102 +4224,66 @@ setupHistoricoFilters() {
 
 
     setMinDate() {
-        const hoje = new Date();
-        const amanha = new Date(hoje);
-        amanha.setDate(hoje.getDate() + 1);
-        
-        const minDate = amanha.toISOString().split('T')[0];
-        
-        const dateInput = document.getElementById('dataPrevisaoDevolucao');
-        if (dateInput) {
-            dateInput.min = minDate;
-        }
+    const hoje = new Date();
+    const amanha = new Date(hoje);
+    amanha.setDate(hoje.getDate() + 1);
+    
+    const minDate = amanha.toISOString().split('T')[0];
+    
+    const dateInput = document.getElementById('dataPrevisaoDevolucao');
+    if (dateInput) {
+        dateInput.min = minDate;
     }
+}
 
     closeModal() {
-    console.log('❌ Fechando modais...');
-    
-    document.querySelectorAll('.modal').forEach(modal => {
+    document.querySelectorAll('.modal.active').forEach(modal => {
         modal.classList.remove('active');
-        
-        // Limpar dados específicos de cada modal
-        if (modal.id === 'modalDevolucao') {
-            modal.removeAttribute('data-notebook-id');
-            modal.removeAttribute('data-emprestimo-id');
-            
-            const observacoes = modal.querySelector('#observacoesDevolucao');
-            if (observacoes) observacoes.value = '';
-            
-            const btnConfirmar = modal.querySelector('#confirmarDevolucao');
-            if (btnConfirmar) {
-                btnConfirmar.disabled = false;
-                btnConfirmar.innerHTML = '<i class="fas fa-check"></i> Confirmar Devolução';
-            }
-        }
-        
-        if (modal.id === 'modalAdicionarNotebook') {
-            // Limpar formulário de adicionar notebook
-            const inputs = modal.querySelectorAll('input, textarea');
-            inputs.forEach(input => input.value = '');
-        }
     });
 }
 
 // NOVA FUNÇÃO: Configurar event listeners de modais CORRIGIDA
 setupModalEventListeners() {
-    console.log('🔧 Configurando event listeners dos modais...');
-    
-    // Configurar botões de fechar modal de forma global
+    // Event delegation para fechar modais
     document.addEventListener('click', (e) => {
-        // Botões com classe modal-close
-        if (e.target.classList.contains('modal-close') || e.target.closest('.modal-close')) {
-            e.preventDefault();
-            e.stopPropagation();
+        if (e.target.classList.contains('modal-close')) {
             this.closeModal();
         }
-        
-        // Clique fora do modal (no backdrop)
         if (e.target.classList.contains('modal')) {
-            e.preventDefault();
             this.closeModal();
         }
     });
-    
+
     // ESC para fechar modal
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             this.closeModal();
         }
     });
-    
-    console.log('✅ Event listeners de modais configurados globalmente');
 }
 
 
     // Funções auxiliares
     mostrarDetalhesNotebook(id) {
-        const notebook = this.notebooks.find(nb => nb.id === id);
-        if (!notebook) return;
+    const notebook = this.notebooks.find(nb => nb.id === id);
+    if (!notebook) return;
 
-        let detalhes = `Notebook: ${notebook.numero}\nSérie: ${notebook.serie}\nRFID: ${notebook.rfid}\nStatus: ${notebook.status}`;
-        if (notebook.modelo) detalhes += `\nModelo: ${notebook.modelo}`;
-        if (notebook.processador) detalhes += `\nProcessador: ${notebook.processador}`;
-        if (notebook.memoria) detalhes += `\nMemória: ${notebook.memoria}`;
-        if (notebook.colaborador) {
-            detalhes += `\n\nEmprestado para: ${notebook.colaborador}\nSetor: ${notebook.setor}\nChamado: ${notebook.chamado}`;
-        }
-        alert(detalhes);
+    let detalhes = `Notebook: ${notebook.numero}\nSérie: ${notebook.serie}\nRFID: ${notebook.rfid}\nStatus: ${notebook.status}`;
+    if (notebook.colaborador) {
+        detalhes += `\n\nEmprestado para: ${notebook.colaborador}\nSetor: ${notebook.setor}\nChamado: ${notebook.chamado}`;
     }
+    alert(detalhes);
+}
 
-    mostrarDetalhesEmprestimo(id) {
-        const emprestimo = this.emprestimos.find(emp => emp.id === id);
-        if (!emprestimo) return;
+mostrarDetalhesEmprestimo(id) {
+    const emprestimo = this.emprestimos.find(emp => emp.id === id);
+    if (!emprestimo) return;
 
-        const notebook = this.notebooks.find(nb => nb.id === emprestimo.notebookId);
-        
-        let detalhes = `Empréstimo: ${notebook ? notebook.numero : 'N/A'}\nColaborador: ${emprestimo.colaborador}\nSetor: ${emprestimo.setor}\nChamado: ${emprestimo.chamado}\nMotivo: ${emprestimo.motivo}`;
-        alert(detalhes);
-    }
+    const notebook = this.notebooks.find(nb => nb.id === emprestimo.notebookId);
+    
+    let detalhes = `Empréstimo: ${notebook ? notebook.numero : 'N/A'}\nColaborador: ${emprestimo.colaborador}\nSetor: ${emprestimo.setor}\nChamado: ${emprestimo.chamado}\nMotivo: ${emprestimo.motivo}`;
+    alert(detalhes);
+}
 
     formatDate(dateString) {
         if (!dateString) return '-';
@@ -3394,41 +4307,43 @@ setupModalEventListeners() {
     }
 
     showToast(message, type = 'success') {
-        console.log(`📢 ${type.toUpperCase()}: ${message}`);
-        
-        document.querySelectorAll('.toast').forEach(toast => toast.remove());
+    console.log(`📢 ${type.toUpperCase()}: ${message}`);
+    
+    document.querySelectorAll('.toast').forEach(toast => toast.remove());
 
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = message;
-        toast.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 600;
-            z-index: 1001;
-            max-width: 300px;
-        `;
-        
-        const colors = {
-            success: '#4CAF50',
-            error: '#F44336',
-            warning: '#FF9800',
-            info: '#2196F3'
-        };
-        
-        toast.style.backgroundColor = colors[type] || colors.success;
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            if (document.body.contains(toast)) {
-                document.body.removeChild(toast);
-            }
-        }, 4000);
-    }
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    
+    const colors = {
+        success: '#4CAF50',
+        error: '#F44336',
+        warning: '#FF9800',
+        info: '#2196F3'
+    };
+    
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        z-index: 1001;
+        max-width: 350px;
+        background: ${colors[type] || colors.success};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+        }
+    }, 4000);
+}
 }
 
 // Inicializar sistema

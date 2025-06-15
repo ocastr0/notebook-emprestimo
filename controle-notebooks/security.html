@@ -358,8 +358,8 @@
     <script>
         class SecurityGuard {
             constructor() {
-                // CONFIGURAÇÃO DA SENHA MASTER (pode ser alterada aqui)
-                this.MASTER_PASSWORD = 'Notebook2025*';
+                // CONFIGURAÇÃO DA SENHA MASTER
+                this.MASTER_PASSWORD = 'Admin@2025!Security';
                 this.MAX_ATTEMPTS = 5;
                 this.LOCKOUT_TIME = 5 * 60 * 1000; // 5 minutos
                 
@@ -367,7 +367,7 @@
                 this.isLocked = false;
                 this.lockoutEndTime = 0;
                 
-                console.log('🛡️ Security Guard inicializado');
+                console.log('🛡️ Security Guard inicializado em:', window.location.hostname);
                 this.init();
             }
 
@@ -375,6 +375,17 @@
                 this.checkLockoutStatus();
                 this.setupEventListeners();
                 this.loadAttempts();
+                this.displaySecurityInfo();
+            }
+
+            displaySecurityInfo() {
+                // Mostrar informações de segurança específicas do Vercel
+                const isVercel = window.location.hostname.includes('vercel.app');
+                if (isVercel) {
+                    console.log('🚀 Detectado ambiente Vercel');
+                    this.showStatus('Sistema hospedado no Vercel - Acesso seguro ativado', 'success');
+                    setTimeout(() => this.hideStatus(), 3000);
+                }
             }
 
             setupEventListeners() {
@@ -581,13 +592,20 @@
 
             redirectToLogin() {
                 const currentHost = window.location.host;
-                const loginUrl = currentHost.includes('vercel.app') 
-                    ? `https://${currentHost}/index-login.html`
-                    : './index-login.html';
+                let loginUrl;
                 
-                console.log('🚀 Redirecionando para login...');
+                if (currentHost.includes('vercel.app')) {
+                    loginUrl = `https://${currentHost}/index-login.html`;
+                } else if (currentHost.includes('localhost')) {
+                    loginUrl = './index-login.html';
+                } else {
+                    loginUrl = '/index-login.html';
+                }
+                
+                console.log('🚀 Redirecionando para login:', loginUrl);
                 window.location.href = loginUrl;
             }
+
 
             setLoading(loading) {
                 const loadingDiv = document.getElementById('loading');
@@ -623,7 +641,7 @@
         }
 
         // Verificar se já tem acesso
-        (function() {
+         (function() {
             const securityAccess = localStorage.getItem('securityAccess');
             
             if (securityAccess) {
@@ -633,10 +651,16 @@
                     
                     if (data.authorized && now < data.expiry) {
                         console.log('✅ Acesso válido encontrado, redirecionando...');
+                        
                         const currentHost = window.location.host;
-                        const loginUrl = currentHost.includes('vercel.app') 
-                            ? `https://${currentHost}/index-login.html`
-                            : './index-login.html';
+                        let loginUrl;
+                        
+                        if (currentHost.includes('vercel.app')) {
+                            loginUrl = `https://${currentHost}/index-login.html`;
+                        } else {
+                            loginUrl = './index-login.html';
+                        }
+                        
                         window.location.replace(loginUrl);
                         return;
                     } else {

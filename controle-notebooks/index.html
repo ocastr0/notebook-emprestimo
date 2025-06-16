@@ -1674,123 +1674,158 @@ class SistemaEmprestimos {
 
     // CORRIGIR: Dashboard com botão devolver funcionando
     renderDashboard() {
-        console.log('🎨 Renderizando dashboard...');
+    console.log('🎨 Renderizando dashboard...');
+    
+    const container = document.getElementById('notebooksContainer');
+    if (!container) {
+        console.error('❌ Container notebooksContainer não encontrado!');
+        return;
+    }
+
+    if (!this.notebooks || this.notebooks.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: var(--dark-gray); border-radius: 12px;">
+                <i class="fas fa-laptop" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
+                <p>Carregando notebooks...</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = this.notebooks.map(notebook => {
+        let statusInfo = null;
         
-        const container = document.getElementById('notebooksContainer');
-        if (!container) {
-            console.error('❌ Container notebooksContainer não encontrado!');
-            return;
+        if (notebook.status === 'emprestado' && notebook.previsaoDevolucao) {
+            statusInfo = this.calcularStatusDevolucao(notebook.previsaoDevolucao);
         }
-
-        if (!this.notebooks || this.notebooks.length === 0) {
-            container.innerHTML = `
-                <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: var(--dark-gray); border-radius: 12px;">
-                    <i class="fas fa-laptop" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
-                    <p>Carregando notebooks...</p>
+        
+        return `
+            <div class="notebook-card ${notebook.status}" data-notebook-id="${notebook.id}">
+                <div class="notebook-icon">
+                    <i class="fas fa-laptop"></i>
                 </div>
-            `;
-            return;
-        }
-
-        // Renderizar notebooks com botão devolver CORRIGIDO
-        container.innerHTML = this.notebooks.map(notebook => {
-            const isAtrasado = notebook.status === 'emprestado' && this.isAtrasado(notebook.previsaoDevolucao);
-            
-            return `
-                <div class="notebook-card ${notebook.status}" onclick="sistema.mostrarDetalhesNotebook(${notebook.id})">
-                    <div class="notebook-icon">
-                        <i class="fas fa-laptop"></i>
-                    </div>
-                    <div class="notebook-number">${notebook.numero}</div>
-                    <div class="notebook-status status-${notebook.status}">
-                        ${notebook.status === 'disponivel' ? 'Disponível' : 'Em Uso'}
-                        ${isAtrasado ? ' (Atrasado)' : ''}
-                    </div>
-                    ${notebook.status === 'emprestado' ? `
-                        <div class="notebook-info">
-                            <strong>${notebook.colaborador}</strong><br>
-                            <span style="color: var(--light-orange);">${notebook.setor}</span><br>
-                            <small>Chamado: ${notebook.chamado}</small><br>
-                            <small>Devolução: ${this.formatDate(notebook.previsaoDevolucao)}</small>
-                        </div>
-                    ` : '<div class="notebook-info">Pronto para empréstimo</div>'}
-                    <div class="notebook-actions">
-                        ${notebook.status === 'emprestado' ? `
-                            <button 
-                                class="btn-danger btn-small devolver-btn" 
-                                data-notebook-id="${notebook.id}"
-                                style="padding: 8px 12px; font-size: 0.85rem;"
-                            >
-                                <i class="fas fa-undo"></i> Devolver
-                            </button>
+                <div class="notebook-number">${notebook.numero}</div>
+                <div class="notebook-status status-${notebook.status}">
+                    ${notebook.status === 'disponivel' ? 'Disponível' : 'Em Uso'}
+                    ${statusInfo && statusInfo.status === 'vencido' ? ' (VENCIDO)' : ''}
+                </div>
+                ${notebook.status === 'emprestado' ? `
+                    <div class="notebook-info">
+                        <strong>${notebook.colaborador}</strong><br>
+                        <span style="color: var(--light-orange);">${notebook.setor}</span><br>
+                        <small>Chamado: ${notebook.chamado}</small><br>
+                        <small>Devolução: ${this.formatDate(notebook.previsaoDevolucao)}</small>
+                        ${statusInfo ? `
+                            <br><small style="color: ${statusInfo.cor}; font-weight: 600;">
+                                <i class="${statusInfo.icone}"></i> ${statusInfo.texto}
+                            </small>
                         ` : ''}
                     </div>
+                ` : '<div class="notebook-info">Pronto para empréstimo</div>'}
+                <div class="notebook-actions">
+                    ${notebook.status === 'emprestado' ? `
+                        <button 
+                            class="btn-danger btn-small devolver-btn" 
+                            data-notebook-id="${notebook.id}"
+                            style="padding: 8px 12px; font-size: 0.85rem; ${statusInfo && statusInfo.status === 'vencido' ? 'background: var(--red); animation: pulse 2s infinite;' : ''}"
+                        >
+                            <i class="fas fa-undo"></i> ${statusInfo && statusInfo.status === 'vencido' ? 'DEVOLVER (VENCIDO)' : 'Devolver'}
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Adicionar animação para itens vencidos
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
+        }
+    `;
+    if (!document.querySelector('style[data-pulse]')) {
+        style.setAttribute('data-pulse', 'true');
+        document.head.appendChild(style);
+    }
+
+    // Event listeners para cards
+    document.querySelectorAll('.notebook-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.devolver-btn')) return;
+            const notebookId = parseInt(card.getAttribute('data-notebook-id'));
+            this.mostrarDetalhesNotebook(notebookId);
+        });
+    });
+
+    // Event listeners para botões devolver
+    document.querySelectorAll('.devolver-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const notebookId = parseInt(btn.getAttribute('data-notebook-id'));
+            this.abrirModalDevolucao(notebookId);
+        });
+    });
+
+    this.renderEmprestimosAtivos();
+    
+    console.log(`✅ Dashboard renderizado com ${this.notebooks.length} notebooks`);
+}
+
+    renderEmprestimosAtivos() {
+    const container = document.getElementById('emprestimosAtivos');
+    if (!container) return;
+
+    const ativos = this.emprestimos.filter(emp => emp.status === 'ativo');
+    
+    if (ativos.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; opacity: 0.7;">
+                <i class="fas fa-clipboard-list" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
+                <p>Nenhum empréstimo ativo</p>
+            </div>
+        `;
+    } else {
+        container.innerHTML = ativos.map(emprestimo => {
+            const notebook = this.notebooks.find(nb => nb.id === emprestimo.notebookId);
+            const statusDevolucao = this.calcularStatusDevolucao(emprestimo.previsaoDevolucao);
+            
+            return `
+                <div class="emprestimo-item" data-emprestimo-id="${emprestimo.id}" style="border-left-color: ${statusDevolucao.cor};">
+                    <div class="emprestimo-header">
+                        <span class="emprestimo-notebook">${notebook ? notebook.numero : 'N/A'}</span>
+                        <span class="emprestimo-status" style="background: ${statusDevolucao.cor}; color: ${statusDevolucao.status === 'no_prazo' ? 'var(--black)' : 'var(--white)'};">
+                            <i class="${statusDevolucao.icone}"></i> ${statusDevolucao.texto}
+                        </span>
+                    </div>
+                    <div class="emprestimo-info">
+                        <div><strong>Colaborador</strong><span>${emprestimo.colaborador}</span></div>
+                        <div><strong>Setor</strong><span>${emprestimo.setor}</span></div>
+                        <div><strong>Chamado</strong><span>${emprestimo.chamado}</span></div>
+                        <div><strong>Devolução</strong><span>${this.formatDate(emprestimo.previsaoDevolucao)}</span></div>
+                    </div>
+                    
+                    ${statusDevolucao.status === 'vencido' ? `
+                        <div style="background: rgba(244, 67, 54, 0.2); padding: 10px; border-radius: 6px; margin-top: 10px; text-align: center;">
+                            <strong style="color: var(--red);">⚠️ EMPRÉSTIMO VENCIDO</strong><br>
+                            <small style="color: var(--white); opacity: 0.9;">Deveria ter sido devolvido em ${this.formatDate(emprestimo.previsaoDevolucao)}</small>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }).join('');
 
-        // Configurar event listeners dos botões devolver
-        setTimeout(() => {
-            document.querySelectorAll('.devolver-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    const notebookId = parseInt(btn.getAttribute('data-notebook-id'));
-                    this.abrirModalDevolucao(notebookId);
-                });
+        // Event listeners para empréstimos
+        document.querySelectorAll('.emprestimo-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const emprestimoId = parseInt(item.getAttribute('data-emprestimo-id'));
+                this.mostrarDetalhesEmprestimo(emprestimoId);
             });
-            console.log('✅ Botões devolver configurados');
-        }, 100);
-
-        // Renderizar empréstimos ativos
-        this.renderEmprestimosAtivos();
-        
-        console.log(`✅ Dashboard renderizado com ${this.notebooks.length} notebooks`);
+        });
     }
-
-    renderEmprestimosAtivos() {
-        const container = document.getElementById('emprestimosAtivos');
-        if (!container) return;
-
-        const ativos = this.emprestimos.filter(emp => emp.status === 'ativo');
-        
-        if (ativos.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px; opacity: 0.7;">
-                    <i class="fas fa-clipboard-list" style="font-size: 3rem; margin-bottom: 15px; color: var(--primary-orange);"></i>
-                    <p>Nenhum empréstimo ativo</p>
-                </div>
-            `;
-        } else {
-            container.innerHTML = ativos.map(emprestimo => {
-                const notebook = this.notebooks.find(nb => nb.id === emprestimo.notebookId);
-                const previsao = new Date(emprestimo.previsaoDevolucao);
-                const hoje = new Date();
-                const isAtrasado = previsao < hoje;
-                const diasRestantes = Math.ceil((previsao - hoje) / (1000 * 60 * 60 * 24));
-                
-                return `
-                    <div class="emprestimo-item" onclick="sistema.mostrarDetalhesEmprestimo(${emprestimo.id})">
-                        <div class="emprestimo-header">
-                            <span class="emprestimo-notebook">${notebook ? notebook.numero : 'N/A'}</span>
-                            <span class="emprestimo-status ${isAtrasado ? 'status-atrasado' : 'status-ativo'}">
-                                ${isAtrasado ? `Atrasado (${Math.abs(diasRestantes)} dias)` : 
-                                  diasRestantes === 0 ? 'Vence Hoje' :
-                                  diasRestantes === 1 ? 'Vence Amanhã' :
-                                  `${diasRestantes} dias restantes`}
-                            </span>
-                        </div>
-                        <div class="emprestimo-info">
-                            <div><strong>Colaborador</strong><span>${emprestimo.colaborador}</span></div>
-                            <div><strong>Setor</strong><span>${emprestimo.setor}</span></div>
-                            <div><strong>Chamado</strong><span>${emprestimo.chamado}</span></div>
-                            <div><strong>Devolução</strong><span>${this.formatDate(emprestimo.previsaoDevolucao)}</span></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-    }
+}
 
     // CORRIGIR: Gestão de Notebooks - Lista completa
     renderListaNotebooksEdicao() {
@@ -1960,82 +1995,82 @@ class SistemaEmprestimos {
     }
 
     // FUNÇÃO PRINCIPAL: Modal de Devolução CORRIGIDO
-    abrirModalDevolucao(notebookId) {
-        console.log('🔄 Abrindo modal de devolução para notebook ID:', notebookId);
-        
-        const notebook = this.notebooks.find(nb => nb.id === notebookId);
-        if (!notebook || notebook.status !== 'emprestado') {
-            this.showToast('❌ Notebook não encontrado ou não está emprestado!', 'error');
-            return;
-        }
-
-        const emprestimo = this.emprestimos.find(emp => 
-            emp.notebookId === notebookId && emp.status === 'ativo'
-        );
-
-        if (!emprestimo) {
-            this.showToast('❌ Empréstimo ativo não encontrado!', 'error');
-            return;
-        }
-
-        // Criar modal se não existir
-        let modal = document.getElementById('modalDevolucao');
-        if (!modal) {
-            modal = this.criarModalDevolucao();
-        }
-
-        // Preencher informações
-        const infoDiv = modal.querySelector('#infoDevolucao');
-        if (infoDiv) {
-            const diasEmprestado = Math.floor((new Date() - new Date(emprestimo.dataEntrega)) / (1000 * 60 * 60 * 24));
-            const isAtrasado = this.isAtrasado(notebook.previsaoDevolucao);
-            const diasAtraso = isAtrasado ? Math.floor((new Date() - new Date(notebook.previsaoDevolucao)) / (1000 * 60 * 60 * 24)) : 0;
-
-            infoDiv.innerHTML = `
-                <div style="background: var(--dark-gray); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--primary-orange);">
-                    <h3 style="color: var(--primary-orange); margin-bottom: 15px;">
-                        <i class="fas fa-laptop"></i> ${notebook.numero}
-                    </h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                        <div><strong style="color: var(--light-orange);">Colaborador:</strong><br>${notebook.colaborador}</div>
-                        <div><strong style="color: var(--light-orange);">Setor:</strong><br>${notebook.setor}</div>
-                        <div><strong style="color: var(--light-orange);">Chamado:</strong><br>${notebook.chamado}</div>
-                        <div><strong style="color: var(--light-orange);">Tempo Emprestado:</strong><br>${diasEmprestado} dia(s)</div>
-                    </div>
-                    ${isAtrasado ? `
-                        <div style="background: rgba(244, 67, 54, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #F44336;">
-                            <strong style="color: #F44336;"><i class="fas fa-exclamation-triangle"></i> ATRASADO</strong><br>
-                            <span style="color: #ffcdd2;">${diasAtraso} dia(s) em atraso</span>
-                        </div>
-                    ` : `
-                        <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 6px; border-left: 3px solid #4CAF50;">
-                            <strong style="color: #4CAF50;"><i class="fas fa-check-circle"></i> NO PRAZO</strong>
-                        </div>
-                    `}
-                </div>
-            `;
-        }
-        
-        // Limpar observações
-        const observacoes = modal.querySelector('#observacoesDevolucao');
-        if (observacoes) {
-            observacoes.value = '';
-        }
-        
-        // Armazenar dados no modal
-        modal.setAttribute('data-notebook-id', notebookId);
-        modal.setAttribute('data-emprestimo-id', emprestimo.id);
-        
-        // Mostrar modal
-        modal.classList.add('active');
-        
-        // Configurar listener do botão confirmar
-        setTimeout(() => {
-            this.setupModalDevolucaoListener();
-        }, 100);
-        
-        console.log('✅ Modal de devolução aberto para:', notebook.numero);
+   abrirModalDevolucao(notebookId) {
+    console.log('🔄 Abrindo modal de devolução para notebook ID:', notebookId);
+    
+    const notebook = this.notebooks.find(nb => nb.id === notebookId);
+    if (!notebook || notebook.status !== 'emprestado') {
+        this.showToast('❌ Notebook não encontrado ou não está emprestado!', 'error');
+        return;
     }
+
+    const emprestimo = this.emprestimos.find(emp => 
+        emp.notebookId === notebookId && emp.status === 'ativo'
+    );
+
+    if (!emprestimo) {
+        this.showToast('❌ Empréstimo ativo não encontrado!', 'error');
+        return;
+    }
+
+    // Preencher informações no modal
+    const infoDiv = document.getElementById('infoDevolucao');
+    if (infoDiv) {
+        const diasEmprestado = Math.floor((new Date() - new Date(emprestimo.dataEntrega)) / (1000 * 60 * 60 * 24));
+        const statusDevolucao = this.calcularStatusDevolucao(notebook.previsaoDevolucao);
+
+        infoDiv.innerHTML = `
+            <div style="background: var(--dark-gray); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--primary-orange);">
+                <h3 style="color: var(--primary-orange); margin-bottom: 15px;">
+                    <i class="fas fa-laptop"></i> ${notebook.numero}
+                </h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div><strong style="color: var(--light-orange);">Colaborador:</strong><br>${notebook.colaborador}</div>
+                    <div><strong style="color: var(--light-orange);">Setor:</strong><br>${notebook.setor}</div>
+                    <div><strong style="color: var(--light-orange);">Chamado:</strong><br>${notebook.chamado}</div>
+                    <div><strong style="color: var(--light-orange);">Tempo Emprestado:</strong><br>${diasEmprestado} dia(s)</div>
+                </div>
+                
+                <div style="background: ${statusDevolucao.cor === 'var(--red)' ? 'rgba(244, 67, 54, 0.2)' : statusDevolucao.cor === 'var(--yellow)' ? 'rgba(255, 193, 7, 0.2)' : 'rgba(76, 175, 80, 0.2)'}; padding: 15px; border-radius: 6px; border-left: 3px solid ${statusDevolucao.cor};">
+                    <strong style="color: ${statusDevolucao.cor};">
+                        <i class="${statusDevolucao.icone}"></i> 
+                        ${statusDevolucao.status === 'vencido' ? 'VENCIDO' : 
+                          statusDevolucao.status === 'vence_hoje' ? 'VENCE HOJE' :
+                          statusDevolucao.status === 'vence_amanha' ? 'VENCE AMANHÃ' : 'NO PRAZO'}
+                    </strong><br>
+                    <span style="color: var(--white); opacity: 0.9;">
+                        ${statusDevolucao.texto}
+                        ${statusDevolucao.status === 'vencido' ? '<br><strong>Deveria ter sido devolvido em ' + this.formatDate(notebook.previsaoDevolucao) + '</strong>' : ''}
+                    </span>
+                </div>
+                
+                <div style="margin-top: 15px; padding: 10px; background: var(--black); border-radius: 6px; font-size: 0.9rem;">
+                    <strong style="color: var(--light-orange);">ℹ️ Regra de Vencimento:</strong><br>
+                    <span style="color: var(--white); opacity: 0.8;">
+                        O notebook deve ser devolvido <strong>até</strong> o dia ${this.formatDate(notebook.previsaoDevolucao)}. 
+                        Após esta data, o empréstimo é considerado vencido.
+                    </span>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Limpar observações
+    const observacoes = document.getElementById('observacoesDevolucao');
+    if (observacoes) {
+        observacoes.value = '';
+    }
+    
+    // Armazenar dados no modal
+    const modal = document.getElementById('modalDevolucao');
+    modal.setAttribute('data-notebook-id', notebookId);
+    modal.setAttribute('data-emprestimo-id', emprestimo.id);
+    
+    // Mostrar modal
+    modal.classList.add('active');
+    
+    console.log('✅ Modal de devolução aberto para:', notebook.numero);
+}
 
     criarModalDevolucao() {
         console.log('🔨 Criando modal de devolução...');
@@ -4298,13 +4333,76 @@ mostrarDetalhesEmprestimo(id) {
     }
 
     isAtrasado(previsaoDevolucao) {
-        if (!previsaoDevolucao) return false;
-        const previsao = new Date(previsaoDevolucao);
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-        previsao.setHours(0, 0, 0, 0);
-        return previsao < hoje;
+    if (!previsaoDevolucao) return false;
+    
+    // Converter data de devolução para objeto Date (início do dia)
+    const dataLimite = new Date(previsaoDevolucao);
+    dataLimite.setHours(23, 59, 59, 999); // Final do dia da devolução
+    
+    // Data atual (início do dia)
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    
+    // Só está vencido se a data atual for MAIOR que a data limite
+    const vencido = hoje > dataLimite;
+    
+    if (vencido) {
+        console.log(`📅 Vencimento detectado:`, {
+            dataLimite: this.formatDate(previsaoDevolucao),
+            dataAtual: this.formatDate(hoje.toISOString()),
+            diasAtraso: Math.floor((hoje - dataLimite) / (1000 * 60 * 60 * 24))
+        });
     }
+    
+    return vencido;
+}
+
+calcularStatusDevolucao(previsaoDevolucao) {
+    if (!previsaoDevolucao) return { status: 'indefinido', dias: 0 };
+    
+    const dataLimite = new Date(previsaoDevolucao);
+    dataLimite.setHours(23, 59, 59, 999);
+    
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    
+    const diferencaMs = dataLimite.getTime() - hoje.getTime();
+    const dias = Math.ceil(diferencaMs / (1000 * 60 * 60 * 24));
+    
+    if (dias < 0) {
+        return {
+            status: 'vencido',
+            dias: Math.abs(dias),
+            cor: 'var(--red)',
+            icone: 'fas fa-exclamation-triangle',
+            texto: `${Math.abs(dias)} dia(s) em atraso`
+        };
+    } else if (dias === 0) {
+        return {
+            status: 'vence_hoje',
+            dias: 0,
+            cor: 'var(--yellow)',
+            icone: 'fas fa-clock',
+            texto: 'Vence hoje'
+        };
+    } else if (dias === 1) {
+        return {
+            status: 'vence_amanha',
+            dias: 1,
+            cor: 'var(--yellow)',
+            icone: 'fas fa-calendar-exclamation',
+            texto: 'Vence amanhã'
+        };
+    } else {
+        return {
+            status: 'no_prazo',
+            dias: dias,
+            cor: 'var(--green)',
+            icone: 'fas fa-check-circle',
+            texto: `${dias} dia(s) restantes`
+        };
+    }
+}
 
     showToast(message, type = 'success') {
     console.log(`📢 ${type.toUpperCase()}: ${message}`);
